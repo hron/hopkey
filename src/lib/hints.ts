@@ -60,6 +60,7 @@ export class HintSystem {
     e.stopPropagation();
 
     if (e.key === "Escape") {
+      e.stopImmediatePropagation();
       this.deactivate();
       return;
     }

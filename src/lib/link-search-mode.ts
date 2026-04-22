@@ -142,6 +142,7 @@ export class LinkSearchMode {
     if (e.key === "Escape") {
       e.preventDefault();
       e.stopPropagation();
+      e.stopImmediatePropagation();
       this.deactivate();
       return;
     }
