@@ -108,7 +108,14 @@ export class InputMode {
   handleKey(e: KeyboardEvent): void {
     if (!this._active) return;
 
-    // Allow browser/OS/system shortcuts through.
+    // In gi mode, Ctrl/Cmd+V should paste into the currently highlighted input.
+    // We focus it first, then let the same key event continue naturally.
+    if (isPasteChord(e)) {
+      this.commitSelection();
+      return;
+    }
+
+    // Allow other browser/OS/system shortcuts through.
     if (e.ctrlKey || e.metaKey || e.altKey) return;
 
     if (e.key === "Escape") {
@@ -293,6 +300,15 @@ function isRendered(el: HTMLElement): boolean {
 
 function isPrintableKey(e: KeyboardEvent): boolean {
   return e.key.length === 1;
+}
+
+function isPasteChord(e: KeyboardEvent): boolean {
+  const key = e.key.toLowerCase();
+  if ((e.ctrlKey || e.metaKey) && !e.altKey && key === "v") return true;
+  if (!e.ctrlKey && !e.metaKey && !e.altKey && e.shiftKey && e.key === "Insert") {
+    return true;
+  }
+  return false;
 }
 
 function routePrintableToInput(target: HTMLElement, char: string): void {
