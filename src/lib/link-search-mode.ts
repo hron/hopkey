@@ -223,7 +223,8 @@ export class LinkSearchMode {
         rect.top > vh ||
         rect.right < 0 ||
         rect.left > vw ||
-        !isRendered(entry.element);
+        !isRendered(entry.element) ||
+        !isTopMostAtAnySamplePoint(entry.element, rect, vw, vh);
 
       entry.visible = !hidden;
 
@@ -441,7 +442,7 @@ function collectVisibleLinks(): HTMLElement[] {
   const vh = window.innerHeight;
 
   const candidates = Array.from(
-    document.querySelectorAll<HTMLElement>('a[href], area[href], [role="link"]'),
+    document.querySelectorAll<HTMLElement>('a[href], [role="link"]'),
   );
 
   const unique = new Set<HTMLElement>();
@@ -455,7 +456,8 @@ function collectVisibleLinks(): HTMLElement[] {
       if (r.width === 0 || r.height === 0) return false;
       if (r.bottom < 0 || r.top > vh) return false;
       if (r.right < 0 || r.left > vw) return false;
-      return isRendered(el);
+      if (!isRendered(el)) return false;
+      return isTopMostAtAnySamplePoint(el, r, vw, vh);
     })
     .sort((a, b) => {
       const ra = a.getBoundingClientRect();
@@ -469,7 +471,44 @@ function collectVisibleLinks(): HTMLElement[] {
 
 function isRendered(el: HTMLElement): boolean {
   const s = getComputedStyle(el);
-  return s.visibility !== "hidden" && s.display !== "none" && s.opacity !== "0";
+  return (
+    s.visibility !== "hidden" &&
+    s.display !== "none" &&
+    s.opacity !== "0" &&
+    s.pointerEvents !== "none"
+  );
+}
+
+function isTopMostAtAnySamplePoint(
+  el: HTMLElement,
+  rect: DOMRect,
+  vw: number,
+  vh: number,
+): boolean {
+  const left = Math.max(0, Math.min(vw - 1, rect.left));
+  const right = Math.max(0, Math.min(vw - 1, rect.right - 1));
+  const top = Math.max(0, Math.min(vh - 1, rect.top));
+  const bottom = Math.max(0, Math.min(vh - 1, rect.bottom - 1));
+
+  const cx = Math.round((left + right) / 2);
+  const cy = Math.round((top + bottom) / 2);
+
+  const points: Array<[number, number]> = [
+    [cx, cy],
+    [Math.round(left + 1), Math.round(top + 1)],
+    [Math.round(right - 1), Math.round(top + 1)],
+    [Math.round(left + 1), Math.round(bottom - 1)],
+    [Math.round(right - 1), Math.round(bottom - 1)],
+  ];
+
+  for (const [x, y] of points) {
+    if (x < 0 || y < 0 || x >= vw || y >= vh) continue;
+    const topEl = document.elementFromPoint(x, y);
+    if (!(topEl instanceof HTMLElement)) continue;
+    if (topEl === el || el.contains(topEl) || topEl.contains(el)) return true;
+  }
+
+  return false;
 }
 
 function isPrintableKey(e: KeyboardEvent): boolean {

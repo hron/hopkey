@@ -225,20 +225,66 @@ function collectVisibleLinks(): HTMLElement[] {
   );
 
   return candidates
-    .filter((el) => {
-      const r = el.getBoundingClientRect();
-      if (r.width === 0 || r.height === 0) return false;
-      if (r.bottom < 0 || r.top > vh) return false;
-      if (r.right < 0 || r.left > vw) return false;
-      const s = getComputedStyle(el);
-      if (s.visibility === "hidden" || s.display === "none" || s.opacity === "0")
-        return false;
-      return true;
-    })
+    .filter((el) => isUserVisibleAndClickable(el, vw, vh))
     .sort((a, b) => {
       const ra = a.getBoundingClientRect();
       const rb = b.getBoundingClientRect();
       const dy = ra.top - rb.top;
       return Math.abs(dy) > 8 ? dy : ra.left - rb.left;
     });
+}
+
+function isUserVisibleAndClickable(el: HTMLElement, vw: number, vh: number): boolean {
+  const r = el.getBoundingClientRect();
+  if (r.width === 0 || r.height === 0) return false;
+  if (r.bottom < 0 || r.top > vh) return false;
+  if (r.right < 0 || r.left > vw) return false;
+
+  const s = getComputedStyle(el);
+  if (
+    s.visibility === "hidden" ||
+    s.display === "none" ||
+    s.opacity === "0" ||
+    s.pointerEvents === "none"
+  ) {
+    return false;
+  }
+
+  // Reject elements fully covered by overlays/modals (Vimium-like practicality).
+  return isTopMostAtAnySamplePoint(el, r, vw, vh);
+}
+
+function isTopMostAtAnySamplePoint(
+  el: HTMLElement,
+  rect: DOMRect,
+  vw: number,
+  vh: number,
+): boolean {
+  const left = Math.max(0, Math.min(vw - 1, rect.left));
+  const right = Math.max(0, Math.min(vw - 1, rect.right - 1));
+  const top = Math.max(0, Math.min(vh - 1, rect.top));
+  const bottom = Math.max(0, Math.min(vh - 1, rect.bottom - 1));
+
+  const cx = Math.round((left + right) / 2);
+  const cy = Math.round((top + bottom) / 2);
+
+  const points: Array<[number, number]> = [
+    [cx, cy],
+    [Math.round(left + 1), Math.round(top + 1)],
+    [Math.round(right - 1), Math.round(top + 1)],
+    [Math.round(left + 1), Math.round(bottom - 1)],
+    [Math.round(right - 1), Math.round(bottom - 1)],
+  ];
+
+  for (const [x, y] of points) {
+    if (x < 0 || y < 0 || x >= vw || y >= vh) continue;
+    const topEl = document.elementFromPoint(x, y);
+    if (!(topEl instanceof HTMLElement)) continue;
+
+    if (topEl === el || el.contains(topEl) || topEl.contains(el)) {
+      return true;
+    }
+  }
+
+  return false;
 }
