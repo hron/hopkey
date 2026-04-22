@@ -4,6 +4,7 @@ export type ActionName =
   | "followLinkNewTab"
   | "copyLink"
   | "focusInput"
+  | "searchLink"
   | "nextFrame"
   | "mainFrame";
 
@@ -14,10 +15,12 @@ export interface Settings {
   focusInput: string;
   nextFrame: string;
   mainFrame: string;
+  searchLink: string;
   hintChars: string;
   hintUpperCase: boolean;
   giCandidateColor: string;
   giCurrentColor: string;
+  linkSearchFuzzy: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -27,10 +30,12 @@ export const DEFAULT_SETTINGS: Settings = {
   focusInput: "gi",
   nextFrame: "gf",
   mainFrame: "gF",
+  searchLink: "gl",
   hintChars: "sadfjklewcmpgh",
   hintUpperCase: false,
   giCandidateColor: "#60a5fa",
   giCurrentColor: "#f59e0b",
+  linkSearchFuzzy: true,
 };
 
 export const ACTION_LABELS: Record<ActionName, string> = {
@@ -38,6 +43,7 @@ export const ACTION_LABELS: Record<ActionName, string> = {
   followLinkNewTab: "Follow link in new tab",
   copyLink: "Copy link URL",
   focusInput: "Focus input field",
+  searchLink: "Search link by text",
   nextFrame: "Switch to next frame",
   mainFrame: "Switch to main frame",
 };

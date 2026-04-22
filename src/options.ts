@@ -82,6 +82,9 @@ function syncControls() {
     candidate;
   (document.getElementById("gi-current-hex") as HTMLInputElement).value =
     current;
+
+  (document.getElementById("link-search-fuzzy") as HTMLInputElement).checked =
+    settings.linkSearchFuzzy;
 }
 
 // ── Static event listeners ────────────────────────────────────────────────
@@ -111,6 +114,13 @@ function wireStaticListeners() {
   ) as HTMLInputElement;
   hintUpperEl.addEventListener("change", () => {
     settings.hintUpperCase = hintUpperEl.checked;
+  });
+
+  const linkSearchFuzzyEl = document.getElementById(
+    "link-search-fuzzy",
+  ) as HTMLInputElement;
+  linkSearchFuzzyEl.addEventListener("change", () => {
+    settings.linkSearchFuzzy = linkSearchFuzzyEl.checked;
   });
 
   const candidateColorEl = document.getElementById(

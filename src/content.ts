@@ -22,6 +22,7 @@ import { loadSettings, DEFAULT_SETTINGS } from "./lib/settings";
 import type { Settings, ActionName } from "./lib/settings";
 import { HintSystem, type HintAction } from "./lib/hints";
 import { InputMode } from "./lib/input-mode";
+import { LinkSearchMode } from "./lib/link-search-mode";
 
 // ── postMessage protocol ──────────────────────────────────────────────────
 //
@@ -53,6 +54,7 @@ let settings: Settings = { ...DEFAULT_SETTINGS };
 let seqBuffer = "";
 let hintSystem: HintSystem | null = null;
 let inputMode: InputMode | null = null;
+let linkSearchMode: LinkSearchMode | null = null;
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────
 
@@ -114,6 +116,11 @@ function onFrameMessage(e: MessageEvent) {
 // ── Key handler ───────────────────────────────────────────────────────────
 
 function onKeyDown(e: KeyboardEvent) {
+  if (linkSearchMode?.active) {
+    linkSearchMode.handleKey(e);
+    return;
+  }
+
   if (inputMode?.active) {
     inputMode.handleKey(e);
     return;
@@ -197,7 +204,8 @@ function runAction(action: ActionName) {
     case "followLink":       startHints("follow");          break;
     case "followLinkNewTab": startHints("follow-new-tab");  break;
     case "copyLink":         startHints("copy");            break;
-    case "focusInput":       startInputMode();              break;
+    case "focusInput":       startInputMode();               break;
+    case "searchLink":       startLinkSearchMode();          break;
     case "nextFrame":        switchFrame("next");           break;
     case "mainFrame":        switchFrame("main");           break;
   }
@@ -207,6 +215,9 @@ function runAction(action: ActionName) {
 
 function startHints(action: HintAction) {
   hintSystem?.deactivate();
+  inputMode?.deactivate();
+  linkSearchMode?.deactivate();
+
   hintSystem = new HintSystem(settings, action, (url, el, act) => {
     hintSystem = null;
     performHintAction(url, el, act);
@@ -253,6 +264,8 @@ function performHintAction(
 
 function startInputMode() {
   inputMode?.deactivate();
+  linkSearchMode?.deactivate();
+
   inputMode = new InputMode(
     {
       candidate: settings.giCandidateColor,
@@ -264,6 +277,36 @@ function startInputMode() {
   );
   inputMode.activate();
   if (!inputMode.active) inputMode = null;
+}
+
+function startLinkSearchMode() {
+  linkSearchMode?.deactivate();
+  inputMode?.deactivate();
+  hintSystem?.deactivate();
+
+  linkSearchMode = new LinkSearchMode(
+    {
+      candidateColor: settings.giCandidateColor,
+      currentColor: settings.giCurrentColor,
+      fuzzy: settings.linkSearchFuzzy,
+    },
+    (url, el, openInNewTab) => {
+      linkSearchMode = null;
+      if (openInNewTab) {
+        if (url) window.open(url, "_blank");
+        else el.click();
+      } else {
+        if (url) window.location.href = url;
+        else el.click();
+      }
+    },
+    () => {
+      linkSearchMode = null;
+    },
+  );
+
+  linkSearchMode.activate();
+  if (!linkSearchMode.active) linkSearchMode = null;
 }
 
 // ── Frame switching ───────────────────────────────────────────────────────
@@ -363,6 +406,7 @@ function activeBindings(): Record<ActionName, string> {
     followLinkNewTab: settings.followLinkNewTab,
     copyLink:         settings.copyLink,
     focusInput:       settings.focusInput,
+    searchLink:       settings.searchLink,
     nextFrame:        settings.nextFrame,
     mainFrame:        settings.mainFrame,
   };

@@ -10,6 +10,7 @@ A minimal keyboard navigation Chrome extension — inspired by Vimium, without t
 | `F` | Follow link in a new tab |
 | `yf` | Copy link URL to clipboard |
 | `gi` | Highlight input fields; cycle selection with <kbd>Tab</kbd> / <kbd>Shift-Tab</kbd>, <kbd>Enter</kbd> to focus, <kbd>Esc</kbd> to cancel |
+| `gl` | Search links by typed phrase; <kbd>Tab</kbd>/<kbd>Shift-Tab</kbd> cycle matches, <kbd>Enter</kbd> open, <kbd>Shift-Enter</kbd> new tab |
 | `gf` | Switch focus to the next `<iframe>` on the page (cycles back to the main document) |
 | `gF` | Switch focus back to the main document |
 
@@ -73,6 +74,7 @@ You can:
 - Change the hint character set
 - Toggle uppercase hints
 - Customize `gi` highlight colors (candidate + current selection)
+- Toggle fuzzy matching in link-search mode
 - Reset everything to defaults
 
 Settings are stored in `chrome.storage.sync` and automatically synced across
@@ -87,6 +89,7 @@ src/
   lib/
     hints.ts          ← hint overlay engine
     input-mode.ts     ← gi mode
+    link-search-mode.ts ← phrase-based link search mode
     settings.ts       ← types, defaults, storage helpers
 public/
   options.html
