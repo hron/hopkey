@@ -124,7 +124,14 @@ function onKeyDown(e: KeyboardEvent) {
     return;
   }
 
-  if (isEditable(e.target)) return;
+  if (isEditable(e.target)) {
+    if (e.key === "Escape") {
+      seqBuffer = "";
+      blurActiveEditableSoon();
+    }
+    return;
+  }
+
   if (e.ctrlKey || e.altKey || e.metaKey) return;
 
   if (e.key === "Escape") {
@@ -331,6 +338,23 @@ function isEditable(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
   const tag = target.tagName.toLowerCase();
   return tag === "input" || tag === "textarea" || tag === "select" || target.isContentEditable;
+}
+
+function isEscBlurTarget(el: HTMLElement): boolean {
+  const tag = el.tagName.toLowerCase();
+  return tag === "input" || tag === "textarea" || el.isContentEditable;
+}
+
+function blurActiveEditableSoon(): void {
+  const active = document.activeElement;
+  if (!(active instanceof HTMLElement)) return;
+  if (!isEscBlurTarget(active)) return;
+
+  queueMicrotask(() => {
+    if (document.activeElement === active) {
+      active.blur();
+    }
+  });
 }
 
 function activeBindings(): Record<ActionName, string> {
