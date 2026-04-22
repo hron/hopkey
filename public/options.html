@@ -57,6 +57,51 @@
           </div>
         </section>
 
+        <!-- ── GI highlight colors ── -->
+        <section class="card">
+          <h2 class="card-title">Input Highlight Colors (gi)</h2>
+          <p class="card-desc">
+            Colors used when <kbd>gi</kbd> is active. Candidate inputs use one
+            color, and the currently selected input uses another.
+          </p>
+
+          <div class="color-grid">
+            <div class="field-group">
+              <label class="field-label" for="gi-candidate-color">
+                Candidate inputs
+              </label>
+              <div class="color-control">
+                <input type="color" id="gi-candidate-color" class="color-input" />
+                <input
+                  type="text"
+                  id="gi-candidate-hex"
+                  class="text-input mono color-hex"
+                  maxlength="7"
+                  spellcheck="false"
+                  autocomplete="off"
+                />
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label class="field-label" for="gi-current-color">
+                Current selection
+              </label>
+              <div class="color-control">
+                <input type="color" id="gi-current-color" class="color-input" />
+                <input
+                  type="text"
+                  id="gi-current-hex"
+                  class="text-input mono color-hex"
+                  maxlength="7"
+                  spellcheck="false"
+                  autocomplete="off"
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+
         <!-- ── Feedback toast ── -->
         <div id="feedback" class="feedback" style="display: none"></div>
 

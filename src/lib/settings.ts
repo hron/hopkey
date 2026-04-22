@@ -16,6 +16,8 @@ export interface Settings {
   mainFrame: string;
   hintChars: string;
   hintUpperCase: boolean;
+  giCandidateColor: string;
+  giCurrentColor: string;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -27,13 +29,15 @@ export const DEFAULT_SETTINGS: Settings = {
   mainFrame: "gF",
   hintChars: "sadfjklewcmpgh",
   hintUpperCase: false,
+  giCandidateColor: "#60a5fa",
+  giCurrentColor: "#f59e0b",
 };
 
 export const ACTION_LABELS: Record<ActionName, string> = {
   followLink: "Follow link",
   followLinkNewTab: "Follow link in new tab",
   copyLink: "Copy link URL",
-  focusInput: "Focus textarea",
+  focusInput: "Focus input field",
   nextFrame: "Switch to next frame",
   mainFrame: "Switch to main frame",
 };

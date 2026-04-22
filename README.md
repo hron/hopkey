@@ -9,7 +9,7 @@ A minimal keyboard navigation Chrome extension — inspired by Vimium, without t
 | `f` | Follow link — highlight links with two-letter hints, type to open |
 | `F` | Follow link in a new tab |
 | `yf` | Copy link URL to clipboard |
-| `gi` | Focus input fields; cycle with <kbd>Tab</kbd> / <kbd>Shift-Tab</kbd>, exit with <kbd>Esc</kbd> |
+| `gi` | Highlight input fields; cycle selection with <kbd>Tab</kbd> / <kbd>Shift-Tab</kbd>, <kbd>Enter</kbd> to focus, <kbd>Esc</kbd> to cancel |
 | `gf` | Switch focus to the next `<iframe>` on the page (cycles back to the main document) |
 | `gF` | Switch focus back to the main document |
 
@@ -72,6 +72,7 @@ You can:
 - Reassign any shortcut (sequences up to 3 keys; conflict detection included)
 - Change the hint character set
 - Toggle uppercase hints
+- Customize `gi` highlight colors (candidate + current selection)
 - Reset everything to defaults
 
 Settings are stored in `chrome.storage.sync` and automatically synced across

@@ -246,7 +246,15 @@ function performHintAction(
 
 function startInputMode() {
   inputMode?.deactivate();
-  inputMode = new InputMode(() => { inputMode = null; });
+  inputMode = new InputMode(
+    {
+      candidate: settings.giCandidateColor,
+      current: settings.giCurrentColor,
+    },
+    () => {
+      inputMode = null;
+    },
+  );
   inputMode.activate();
   if (!inputMode.active) inputMode = null;
 }

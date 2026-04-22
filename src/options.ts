@@ -29,7 +29,7 @@ let captureBuffer = "";
 async function init() {
   settings = await loadSettings();
   renderBindings();
-  syncHintControls();
+  syncControls();
   wireStaticListeners();
 }
 
@@ -62,11 +62,26 @@ function renderBindings() {
   }
 }
 
-function syncHintControls() {
+function syncControls() {
   (document.getElementById("hint-chars") as HTMLInputElement).value =
     settings.hintChars;
   (document.getElementById("hint-uppercase") as HTMLInputElement).checked =
     settings.hintUpperCase;
+
+  const candidate = normalizeHexColor(settings.giCandidateColor) ?? DEFAULT_SETTINGS.giCandidateColor;
+  const current = normalizeHexColor(settings.giCurrentColor) ?? DEFAULT_SETTINGS.giCurrentColor;
+
+  settings.giCandidateColor = candidate;
+  settings.giCurrentColor = current;
+
+  (document.getElementById("gi-candidate-color") as HTMLInputElement).value =
+    candidate;
+  (document.getElementById("gi-current-color") as HTMLInputElement).value =
+    current;
+  (document.getElementById("gi-candidate-hex") as HTMLInputElement).value =
+    candidate;
+  (document.getElementById("gi-current-hex") as HTMLInputElement).value =
+    current;
 }
 
 // ── Static event listeners ────────────────────────────────────────────────
@@ -96,6 +111,46 @@ function wireStaticListeners() {
   ) as HTMLInputElement;
   hintUpperEl.addEventListener("change", () => {
     settings.hintUpperCase = hintUpperEl.checked;
+  });
+
+  const candidateColorEl = document.getElementById(
+    "gi-candidate-color",
+  ) as HTMLInputElement;
+  const candidateHexEl = document.getElementById(
+    "gi-candidate-hex",
+  ) as HTMLInputElement;
+
+  candidateColorEl.addEventListener("input", () => {
+    settings.giCandidateColor = candidateColorEl.value;
+    candidateHexEl.value = candidateColorEl.value;
+  });
+
+  candidateHexEl.addEventListener("input", () => {
+    const normalized = normalizeHexColor(candidateHexEl.value);
+    if (!normalized) return;
+    settings.giCandidateColor = normalized;
+    candidateColorEl.value = normalized;
+    candidateHexEl.value = normalized;
+  });
+
+  const currentColorEl = document.getElementById(
+    "gi-current-color",
+  ) as HTMLInputElement;
+  const currentHexEl = document.getElementById(
+    "gi-current-hex",
+  ) as HTMLInputElement;
+
+  currentColorEl.addEventListener("input", () => {
+    settings.giCurrentColor = currentColorEl.value;
+    currentHexEl.value = currentColorEl.value;
+  });
+
+  currentHexEl.addEventListener("input", () => {
+    const normalized = normalizeHexColor(currentHexEl.value);
+    if (!normalized) return;
+    settings.giCurrentColor = normalized;
+    currentColorEl.value = normalized;
+    currentHexEl.value = normalized;
   });
 
   // Key capture is global — runs whenever the modal is open
@@ -200,6 +255,29 @@ async function onSave() {
   settings.hintChars = unique || DEFAULT_SETTINGS.hintChars;
   hintCharsEl.value = settings.hintChars;
 
+  const candidateHexEl = document.getElementById(
+    "gi-candidate-hex",
+  ) as HTMLInputElement;
+  const currentHexEl = document.getElementById(
+    "gi-current-hex",
+  ) as HTMLInputElement;
+
+  const candidate = normalizeHexColor(candidateHexEl.value);
+  const current = normalizeHexColor(currentHexEl.value);
+
+  if (!candidate || !current) {
+    showFeedback("Highlight colors must be valid hex values like #60a5fa.", "error");
+    return;
+  }
+
+  settings.giCandidateColor = candidate;
+  settings.giCurrentColor = current;
+
+  candidateHexEl.value = candidate;
+  currentHexEl.value = current;
+  (document.getElementById("gi-candidate-color") as HTMLInputElement).value = candidate;
+  (document.getElementById("gi-current-color") as HTMLInputElement).value = current;
+
   await saveSettings(settings);
   showFeedback("Settings saved!", "success");
 }
@@ -207,8 +285,13 @@ async function onSave() {
 function onResetDefaults() {
   settings = { ...DEFAULT_SETTINGS };
   renderBindings();
-  syncHintControls();
+  syncControls();
   showFeedback("Reset to defaults — click Save to apply.", "info");
+}
+
+function normalizeHexColor(value: string): string | null {
+  const normalized = value.trim().toLowerCase();
+  return /^#[0-9a-f]{6}$/.test(normalized) ? normalized : null;
 }
 
 // ── Feedback toast ────────────────────────────────────────────────────────

@@ -241,6 +241,41 @@ body {
   cursor: pointer;
 }
 
+/* ── Color controls ─────────────────────────────────────────────────────── */
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem 1.5rem;
+}
+
+.color-control {
+  display: flex;
+  align-items: center;
+  gap: .625rem;
+}
+
+.color-input {
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-sm);
+  background: var(--clr-surface);
+  cursor: pointer;
+}
+
+.color-input::-webkit-color-swatch-wrapper { padding: 0; }
+.color-input::-webkit-color-swatch {
+  border: none;
+  border-radius: 5px;
+}
+
+.color-hex {
+  width: 7.5rem;
+  letter-spacing: .02em;
+  text-transform: lowercase;
+}
+
 /* ── Feedback toast ─────────────────────────────────────────────────────── */
 .feedback {
   padding: .6rem 1rem;
