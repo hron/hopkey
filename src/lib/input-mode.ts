@@ -1,6 +1,6 @@
 /**
- * `gi` mode: highlights all editable inputs on the page and lets the user
- * cycle through them with Tab / Shift-Tab.  Escape exits the mode.
+ * `gi` mode: highlights visible <textarea> elements on the page and lets the
+ * user cycle through them with Tab / Shift-Tab. Escape exits the mode.
  */
 export class InputMode {
   private inputs: HTMLElement[] = [];
@@ -100,13 +100,7 @@ export class InputMode {
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
-const INPUT_SELECTOR = [
-  'input:not([type="hidden"]):not([type="button"]):not([type="submit"])',
-  ':not([type="reset"]):not([type="image"]):not([disabled])',
-  ", textarea:not([disabled])",
-  ', [contenteditable="true"]',
-  ", [contenteditable]",
-].join("");
+const INPUT_SELECTOR = "textarea:not([disabled])";
 
 function collectInputs(): HTMLElement[] {
   const vw = window.innerWidth;

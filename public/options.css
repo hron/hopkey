@@ -1,5 +1,7 @@
 /* ── Design tokens ─────────────────────────────────────────────────────── */
 :root {
+  color-scheme: light;
+
   --clr-bg:         #f5f5f7;
   --clr-surface:    #ffffff;
   --clr-border:     #e2e2e7;
@@ -28,6 +30,10 @@
   --clr-kbd-bg:     #f1f1f4;
   --clr-kbd-bd:     #d1d1d8;
 
+  --clr-capture-bg: #fefce8;
+  --clr-capture-bd: #facc15;
+  --clr-capture-tx: #713f12;
+
   --radius-sm:  6px;
   --radius-md:  10px;
   --radius-lg:  14px;
@@ -35,6 +41,48 @@
   --shadow-sm:  0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
   --shadow-md:  0 4px 16px rgba(0,0,0,.10), 0 2px 6px rgba(0,0,0,.06);
   --shadow-lg:  0 12px 40px rgba(0,0,0,.16), 0 4px 12px rgba(0,0,0,.08);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+
+    --clr-bg:         #0f1117;
+    --clr-surface:    #171b24;
+    --clr-border:     #30384a;
+    --clr-border-dim: #252c3b;
+
+    --clr-text:       #e6e9f2;
+    --clr-text-2:     #a8b0c3;
+    --clr-text-3:     #7f88a0;
+
+    --clr-primary:    #818cf8;
+    --clr-primary-h:  #6366f1;
+    --clr-primary-bg: #1f2540;
+
+    --clr-success-bg: #10261b;
+    --clr-success-bd: #2f8f5c;
+    --clr-success-tx: #8de2b7;
+
+    --clr-info-bg:    #10243a;
+    --clr-info-bd:    #2f78c8;
+    --clr-info-tx:    #9cc7ff;
+
+    --clr-error-bg:   #32171a;
+    --clr-error-bd:   #b34a57;
+    --clr-error-tx:   #ffb3bd;
+
+    --clr-kbd-bg:     #222937;
+    --clr-kbd-bd:     #3a4357;
+
+    --clr-capture-bg: #3d3209;
+    --clr-capture-bd: #d3aa1c;
+    --clr-capture-tx: #ffd973;
+
+    --shadow-sm:  0 1px 3px rgba(0,0,0,.40), 0 1px 2px rgba(0,0,0,.30);
+    --shadow-md:  0 4px 16px rgba(0,0,0,.45), 0 2px 6px rgba(0,0,0,.30);
+    --shadow-lg:  0 12px 40px rgba(0,0,0,.55), 0 4px 12px rgba(0,0,0,.35);
+  }
 }
 
 /* ── Reset ─────────────────────────────────────────────────────────────── */
@@ -143,9 +191,9 @@ body {
   transition: background .15s, border-color .15s;
 }
 .binding-key.capturing {
-  background: #fefce8;
-  border-color: #facc15;
-  color: #713f12;
+  background: var(--clr-capture-bg);
+  border-color: var(--clr-capture-bd);
+  color: var(--clr-capture-tx);
   animation: blink 1s ease-in-out infinite;
 }
 @keyframes blink { 0%,100% { opacity: 1 } 50% { opacity: .4 } }

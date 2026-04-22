@@ -33,7 +33,7 @@ export const ACTION_LABELS: Record<ActionName, string> = {
   followLink: "Follow link",
   followLinkNewTab: "Follow link in new tab",
   copyLink: "Copy link URL",
-  focusInput: "Focus input field",
+  focusInput: "Focus textarea",
   nextFrame: "Switch to next frame",
   mainFrame: "Switch to main frame",
 };
