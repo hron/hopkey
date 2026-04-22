@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HopKey — Settings</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="header">
+        <div class="header-inner">
+          <div class="logo">
+            <span class="logo-icon">⌨</span>
+            <span class="logo-text">HopKey</span>
+          </div>
+          <p class="tagline">Keyboard navigation settings</p>
+        </div>
+      </header>
+
+      <main class="main">
+        <!-- ── Key bindings ── -->
+        <section class="card">
+          <h2 class="card-title">Key Bindings</h2>
+          <p class="card-desc">
+            Click <strong>Reassign</strong> next to any action to capture a new
+            shortcut. Sequences of up to three keys are supported (e.g.&nbsp;
+            <kbd>g</kbd><kbd>f</kbd>).
+          </p>
+          <div id="bindings-container"></div>
+        </section>
+
+        <!-- ── Hint characters ── -->
+        <section class="card">
+          <h2 class="card-title">Hint Characters</h2>
+          <p class="card-desc">
+            Letters used to build two-character link labels. Home-row keys are
+            recommended for speed.
+          </p>
+          <div class="hint-row">
+            <div class="field-group">
+              <label class="field-label" for="hint-chars">Character set</label>
+              <input
+                type="text"
+                id="hint-chars"
+                class="text-input mono"
+                maxlength="26"
+                spellcheck="false"
+                autocomplete="off"
+              />
+            </div>
+            <label class="checkbox-label">
+              <input type="checkbox" id="hint-uppercase" />
+              <span>Show hints in uppercase</span>
+            </label>
+          </div>
+        </section>
+
+        <!-- ── Feedback toast ── -->
+        <div id="feedback" class="feedback" style="display: none"></div>
+
+        <!-- ── Bottom actions ── -->
+        <div class="toolbar">
+          <button id="reset-btn" class="btn btn-ghost">Reset to defaults</button>
+          <button id="save-btn" class="btn btn-primary">Save settings</button>
+        </div>
+      </main>
+    </div>
+
+    <!-- ── Key-capture modal ── -->
+    <div
+      id="capture-modal"
+      class="modal-backdrop"
+      style="display: none"
+      tabindex="-1"
+    >
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <h3 id="modal-title" class="modal-title">Capture shortcut</h3>
+
+        <div class="capture-display">
+          <kbd id="capture-preview" class="capture-preview">—</kbd>
+        </div>
+
+        <p id="capture-hint" class="capture-hint">
+          Type the new shortcut, then press Enter to confirm.
+        </p>
+
+        <div class="modal-actions">
+          <button id="cancel-capture-btn" class="btn btn-ghost">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="options.js"></script>
+  </body>
+</html>

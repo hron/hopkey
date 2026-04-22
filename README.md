@@ -1,0 +1,97 @@
+# HopKey
+
+A minimal keyboard navigation Chrome extension — inspired by Vimium, without the complexity.
+
+## Actions
+
+| Key | Action |
+|-----|--------|
+| `f` | Follow link — highlight links with two-letter hints, type to open |
+| `F` | Follow link in a new tab |
+| `yf` | Copy link URL to clipboard |
+| `gi` | Focus input fields; cycle with <kbd>Tab</kbd> / <kbd>Shift-Tab</kbd>, exit with <kbd>Esc</kbd> |
+| `gf` | Switch focus to the next `<iframe>` on the page (cycles back to the main document) |
+| `gF` | Switch focus back to the main document |
+
+All shortcuts are reassignable via the settings page.
+
+## How hint mode works
+
+When you press `f`, `F`, or `yf`:
+
+1. Every visible link is labelled with a two-character badge (e.g. `sa`, `df`).
+2. Type the first character — non-matching hints disappear.
+3. Type the second character — the action fires immediately.
+4. Press `Backspace` to erase the last typed character.
+5. Press `Esc` to cancel.
+
+Hint characters default to `sadfjklewcmpgh` (home-row biased). With 14 characters you get up to 196 unique hints. For pages with ≤ 14 links every hint has a unique first character, so a single keystroke is enough to narrow it down to one.
+
+## How frame switching works (`gf` / `gF`)
+
+The content script runs inside every `<iframe>` on the page as well as the
+top-level document. The instances talk to each other through `window.postMessage`
+using a private sentinel (`__hopkey__`). No background service worker is needed.
+
+- **Top frame** acts as coordinator: it queries `document.activeElement` to find
+  which `<iframe>` currently has focus and routes the "focus next" message to the
+  right target.
+- **Child frames** delegate `gf` / `gF` requests to `window.top`.
+- `gF` always returns focus to the top-level document.
+
+This means everything stays inside the tab — no cross-tab interference is possible.
+
+## Installation
+
+```bash
+bun install
+bun run build        # outputs to dist/
+```
+
+Then in Chrome:
+
+1. Navigate to `chrome://extensions`
+2. Enable **Developer mode** (top-right toggle)
+3. Click **Load unpacked** and select the `dist/` folder
+
+## Development
+
+```bash
+bun run build.ts --watch   # rebuilds on every file change
+```
+
+After each rebuild, click the **⟳** button on the extension card in
+`chrome://extensions` to reload it.
+
+## Settings
+
+Open the settings page from `chrome://extensions` → HopKey → **Details** →
+**Extension options**, or right-click the toolbar icon → **Options**.
+
+You can:
+- Reassign any shortcut (sequences up to 3 keys; conflict detection included)
+- Change the hint character set
+- Toggle uppercase hints
+- Reset everything to defaults
+
+Settings are stored in `chrome.storage.sync` and automatically synced across
+Chrome profiles signed into the same Google account.
+
+## Project layout
+
+```
+src/
+  content.ts          ← single content script (injected into every frame)
+  options.ts          ← settings page logic
+  lib/
+    hints.ts          ← hint overlay engine
+    input-mode.ts     ← gi mode
+    settings.ts       ← types, defaults, storage helpers
+public/
+  options.html
+  options.css
+scripts/
+  generate-icons.ts   ← headless PNG generator (no external deps)
+manifest.json
+build.ts
+```

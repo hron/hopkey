@@ -1,0 +1,14 @@
+{
+  "name": "hopkey",
+  "version": "1.0.0",
+  "description": "Minimal keyboard navigation Chrome extension",
+  "scripts": {
+    "build": "bun run build.ts",
+    "dev": "bun run build.ts --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.279",
+    "typescript": "^5.4.5"
+  }
+}
