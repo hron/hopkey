@@ -75,21 +75,22 @@ function syncControls() {
     settings.hintUpperCase;
 
   const candidate =
-    normalizeHexColor(settings.giCandidateColor) ??
-    DEFAULT_SETTINGS.giCandidateColor;
+    normalizeHexColor(settings.inputCandidateColor) ??
+    DEFAULT_SETTINGS.inputCandidateColor;
   const current =
-    normalizeHexColor(settings.giCurrentColor) ?? DEFAULT_SETTINGS.giCurrentColor;
+    normalizeHexColor(settings.inputCurrentColor) ??
+    DEFAULT_SETTINGS.inputCurrentColor;
 
-  settings.giCandidateColor = candidate;
-  settings.giCurrentColor = current;
+  settings.inputCandidateColor = candidate;
+  settings.inputCurrentColor = current;
 
-  (document.getElementById("gi-candidate-color") as HTMLInputElement).value =
+  (document.getElementById("input-candidate-color") as HTMLInputElement).value =
     candidate;
-  (document.getElementById("gi-current-color") as HTMLInputElement).value =
+  (document.getElementById("input-current-color") as HTMLInputElement).value =
     current;
-  (document.getElementById("gi-candidate-hex") as HTMLInputElement).value =
+  (document.getElementById("input-candidate-hex") as HTMLInputElement).value =
     candidate;
-  (document.getElementById("gi-current-hex") as HTMLInputElement).value =
+  (document.getElementById("input-current-hex") as HTMLInputElement).value =
     current;
 
   (document.getElementById("link-search-fuzzy") as HTMLInputElement).checked =
@@ -129,7 +130,7 @@ function renderExclusionRules() {
     const passKeysInput = document.createElement("input");
     passKeysInput.type = "text";
     passKeysInput.className = "text-input mono exception-passkeys";
-    passKeysInput.placeholder = "f F gi (empty = disable all)";
+    passKeysInput.placeholder = "f F i (empty = disable all)";
     passKeysInput.autocomplete = "off";
     passKeysInput.spellcheck = false;
     passKeysInput.value = rule.passKeys;
@@ -201,41 +202,41 @@ function wireStaticListeners() {
   });
 
   const candidateColorEl = document.getElementById(
-    "gi-candidate-color",
+    "input-candidate-color",
   ) as HTMLInputElement;
   const candidateHexEl = document.getElementById(
-    "gi-candidate-hex",
+    "input-candidate-hex",
   ) as HTMLInputElement;
 
   candidateColorEl.addEventListener("input", () => {
-    settings.giCandidateColor = candidateColorEl.value;
+    settings.inputCandidateColor = candidateColorEl.value;
     candidateHexEl.value = candidateColorEl.value;
   });
 
   candidateHexEl.addEventListener("input", () => {
     const normalized = normalizeHexColor(candidateHexEl.value);
     if (!normalized) return;
-    settings.giCandidateColor = normalized;
+    settings.inputCandidateColor = normalized;
     candidateColorEl.value = normalized;
     candidateHexEl.value = normalized;
   });
 
   const currentColorEl = document.getElementById(
-    "gi-current-color",
+    "input-current-color",
   ) as HTMLInputElement;
   const currentHexEl = document.getElementById(
-    "gi-current-hex",
+    "input-current-hex",
   ) as HTMLInputElement;
 
   currentColorEl.addEventListener("input", () => {
-    settings.giCurrentColor = currentColorEl.value;
+    settings.inputCurrentColor = currentColorEl.value;
     currentHexEl.value = currentColorEl.value;
   });
 
   currentHexEl.addEventListener("input", () => {
     const normalized = normalizeHexColor(currentHexEl.value);
     if (!normalized) return;
-    settings.giCurrentColor = normalized;
+    settings.inputCurrentColor = normalized;
     currentColorEl.value = normalized;
     currentHexEl.value = normalized;
   });
@@ -343,10 +344,10 @@ async function onSave() {
   hintCharsEl.value = settings.hintChars;
 
   const candidateHexEl = document.getElementById(
-    "gi-candidate-hex",
+    "input-candidate-hex",
   ) as HTMLInputElement;
   const currentHexEl = document.getElementById(
-    "gi-current-hex",
+    "input-current-hex",
   ) as HTMLInputElement;
 
   const candidate = normalizeHexColor(candidateHexEl.value);
@@ -357,14 +358,14 @@ async function onSave() {
     return;
   }
 
-  settings.giCandidateColor = candidate;
-  settings.giCurrentColor = current;
+  settings.inputCandidateColor = candidate;
+  settings.inputCurrentColor = current;
 
   candidateHexEl.value = candidate;
   currentHexEl.value = current;
-  (document.getElementById("gi-candidate-color") as HTMLInputElement).value =
+  (document.getElementById("input-candidate-color") as HTMLInputElement).value =
     candidate;
-  (document.getElementById("gi-current-color") as HTMLInputElement).value =
+  (document.getElementById("input-current-color") as HTMLInputElement).value =
     current;
 
   const normalizedExclusions = normalizeExclusionRules();

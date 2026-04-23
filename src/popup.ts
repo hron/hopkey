@@ -92,7 +92,7 @@ function renderRules() {
     const keysInput = document.createElement("input");
     keysInput.type = "text";
     keysInput.className = "text-input rule-keys";
-    keysInput.placeholder = "f F gi (empty = disable all)";
+    keysInput.placeholder = "f F i (empty = disable all)";
     keysInput.spellcheck = false;
     keysInput.autocomplete = "off";
     keysInput.value = rule.passKeys;

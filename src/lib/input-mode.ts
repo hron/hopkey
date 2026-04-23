@@ -1,8 +1,8 @@
 /**
- * `gi` mode: highlights visible text-entry fields (Vimium-like filtering)
+ * Input focus mode: highlights visible text-entry fields (Vimium-like filtering)
  * and lets the user cycle a "current" candidate with Tab / Shift-Tab.
  *
- * This uses Vimium's core approach for `gi`: draw independent overlay
+ * This uses Vimium's core approach: draw independent overlay
  * rectangles on top of inputs (instead of styling inputs directly).
  *
  * Behavior:
@@ -53,7 +53,7 @@ export class InputMode {
     this.selectedIndex = 0;
 
     const container = document.createElement("div");
-    container.id = "hopkey-gi-marker-container";
+    container.id = "hopkey-input-marker-container";
     container.style.cssText = [
       "position:absolute",
       "left:0",
@@ -108,7 +108,7 @@ export class InputMode {
   handleKey(e: KeyboardEvent): void {
     if (!this._active) return;
 
-    // In gi mode, Ctrl/Cmd+V should paste into the currently highlighted input.
+    // In input mode, Ctrl/Cmd+V should paste into the currently highlighted input.
     // We focus it first, then let the same key event continue naturally.
     if (isPasteChord(e)) {
       this.commitSelection();
@@ -262,7 +262,7 @@ function collectInputs(): HTMLElement[] {
   const vh = window.innerHeight;
 
   return Array.from(document.querySelectorAll<HTMLElement>(INPUT_SELECTOR))
-    .filter(isGiTarget)
+    .filter(isInputFocusTarget)
     .filter((el) => {
       const r = el.getBoundingClientRect();
       if (r.width === 0 || r.height === 0) return false;
@@ -278,7 +278,7 @@ function collectInputs(): HTMLElement[] {
     });
 }
 
-function isGiTarget(el: HTMLElement): boolean {
+function isInputFocusTarget(el: HTMLElement): boolean {
   if (el instanceof HTMLInputElement) {
     if (el.disabled || el.readOnly) return false;
     const type = (el.getAttribute("type") ?? "").toLowerCase();

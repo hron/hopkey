@@ -1,19 +1,19 @@
 /**
  * HopKey content script — runs in every frame of every page.
  *
- * Frame switching (gf / gF) is coordinated purely through window.postMessage
+ * Frame switching is coordinated purely through window.postMessage
  * between the content-script instances that live inside the same tab.
  * No background worker is involved.
  *
  *   ┌─ top frame (frameId 0) ──────────────────────────────────────────┐
- *   │  • Acts as coordinator for gf cycling                            │
+ *   │  • Acts as coordinator for frame-focus cycling                    │
  *   │  • Checks document.activeElement to find the focused iframe      │
  *   │  • Forwards focus_self to the target iframe's contentWindow      │
  *   └──────────────────────────────────────────────────────────────────┘
  *         ↑ postMessage: next_frame / main_frame
  *         ↓ postMessage: focus_self
  *   ┌─ iframe content scripts ─────────────────────────────────────────┐
- *   │  • Handle their own hints / gi                                    │
+ *   │  • Handle their own hints / input mode                             │
  *   │  • Delegate frame-switch requests up to window.top              │
  *   └──────────────────────────────────────────────────────────────────┘
  */
@@ -276,8 +276,8 @@ function startInputMode() {
 
   inputMode = new InputMode(
     {
-      candidate: settings.giCandidateColor,
-      current: settings.giCurrentColor,
+      candidate: settings.inputCandidateColor,
+      current: settings.inputCurrentColor,
     },
     () => {
       inputMode = null;
@@ -294,8 +294,8 @@ function startLinkSearchMode() {
 
   linkSearchMode = new LinkSearchMode(
     {
-      candidateColor: settings.giCandidateColor,
-      currentColor: settings.giCurrentColor,
+      candidateColor: settings.inputCandidateColor,
+      currentColor: settings.inputCurrentColor,
       fuzzy: settings.linkSearchFuzzy,
     },
     (url, el, openInNewTab) => {

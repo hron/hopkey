@@ -25,8 +25,8 @@ export interface Settings {
   searchLink: string;
   hintChars: string;
   hintUpperCase: boolean;
-  giCandidateColor: string;
-  giCurrentColor: string;
+  inputCandidateColor: string;
+  inputCurrentColor: string;
   linkSearchFuzzy: boolean;
   exclusionRules: ExclusionRule[];
 }
@@ -34,15 +34,15 @@ export interface Settings {
 export const DEFAULT_SETTINGS: Settings = {
   followLink: "f",
   followLinkNewTab: "F",
-  copyLink: "yf",
-  focusInput: "gi",
-  nextFrame: "gf",
-  mainFrame: "gF",
-  searchLink: "gl",
+  copyLink: "k",
+  focusInput: "i",
+  nextFrame: "h",
+  mainFrame: "H",
+  searchLink: "l",
   hintChars: "sadfjklewcmpgh",
   hintUpperCase: false,
-  giCandidateColor: "#60a5fa",
-  giCurrentColor: "#f59e0b",
+  inputCandidateColor: "#60a5fa",
+  inputCurrentColor: "#f59e0b",
   linkSearchFuzzy: true,
   exclusionRules: [],
 };
@@ -90,10 +90,21 @@ export function loadSettings(): Promise<Settings> {
       settings.hintChars = typeof raw.hintChars === "string" ? raw.hintChars : settings.hintChars;
       settings.hintUpperCase =
         typeof raw.hintUpperCase === "boolean" ? raw.hintUpperCase : settings.hintUpperCase;
-      settings.giCandidateColor =
-        typeof raw.giCandidateColor === "string" ? raw.giCandidateColor : settings.giCandidateColor;
-      settings.giCurrentColor =
-        typeof raw.giCurrentColor === "string" ? raw.giCurrentColor : settings.giCurrentColor;
+      const legacyCandidateColor = (raw as Record<string, unknown>)["giCandidateColor"];
+      const legacyCurrentColor = (raw as Record<string, unknown>)["giCurrentColor"];
+
+      settings.inputCandidateColor =
+        typeof raw.inputCandidateColor === "string"
+          ? raw.inputCandidateColor
+          : typeof legacyCandidateColor === "string"
+            ? legacyCandidateColor
+            : settings.inputCandidateColor;
+      settings.inputCurrentColor =
+        typeof raw.inputCurrentColor === "string"
+          ? raw.inputCurrentColor
+          : typeof legacyCurrentColor === "string"
+            ? legacyCurrentColor
+            : settings.inputCurrentColor;
       settings.linkSearchFuzzy =
         typeof raw.linkSearchFuzzy === "boolean" ? raw.linkSearchFuzzy : settings.linkSearchFuzzy;
 
