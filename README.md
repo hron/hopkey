@@ -16,6 +16,8 @@ A minimal keyboard navigation Chrome extension — inspired by Vimium, without t
 
 All shortcuts are reassignable via the settings page.
 
+Per-site exceptions are also supported via the toolbar popup (click the HopKey icon).
+
 ## How hint mode works
 
 When you press `f`, `F`, or `yf`:
@@ -71,11 +73,20 @@ Open the settings page from `chrome://extensions` → HopKey → **Details** →
 
 You can:
 - Reassign any shortcut (sequences up to 3 keys; conflict detection included)
+- Add/edit/remove site exceptions (URL pattern + disabled shortcuts)
+  - Multiple matching rules are merged; any matching rule with empty shortcuts disables HopKey entirely
 - Change the hint character set
 - Toggle uppercase hints
 - Customize `gi` highlight colors (candidate + current selection)
 - Toggle fuzzy matching in link-search mode
 - Reset everything to defaults
+
+Popup quick controls:
+- Click the HopKey toolbar icon on any page
+- See all exception rules that currently match that page
+- Add/edit/remove those matching rules directly from the popup
+- Leave "Disabled shortcuts" empty to disable HopKey entirely on matching pages
+- Or list shortcuts (e.g. `f F gi`) to disable only those shortcuts
 
 Settings are stored in `chrome.storage.sync` and automatically synced across
 Chrome profiles signed into the same Google account.
@@ -86,14 +97,18 @@ Chrome profiles signed into the same Google account.
 src/
   content.ts          ← single content script (injected into every frame)
   options.ts          ← settings page logic
+  popup.ts            ← toolbar popup (site exceptions)
   lib/
     hints.ts          ← hint overlay engine
     input-mode.ts     ← gi mode
     link-search-mode.ts ← phrase-based link search mode
     settings.ts       ← types, defaults, storage helpers
+    exclusions.ts     ← URL-pattern matching + pass-key utilities
 public/
   options.html
   options.css
+  popup.html
+  popup.css
 scripts/
   generate-icons.ts   ← headless PNG generator (no external deps)
 manifest.json

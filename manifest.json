@@ -3,7 +3,7 @@
   "name": "HopKey",
   "version": "1.0.0",
   "description": "Minimal keyboard navigation: follow links, copy links, focus inputs, switch frames.",
-  "permissions": ["storage"],
+  "permissions": ["storage", "tabs"],
   "host_permissions": ["<all_urls>"],
   "content_scripts": [
     {
@@ -19,6 +19,7 @@
   },
   "action": {
     "default_title": "HopKey",
+    "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",

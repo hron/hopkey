@@ -18,8 +18,13 @@
  *   └──────────────────────────────────────────────────────────────────┘
  */
 
-import { loadSettings, DEFAULT_SETTINGS } from "./lib/settings";
+import {
+  loadSettings,
+  createDefaultSettings,
+  ACTION_NAMES,
+} from "./lib/settings";
 import type { Settings, ActionName } from "./lib/settings";
+import { getEffectiveRule, tokenizePassKeys } from "./lib/exclusions";
 import { HintSystem, type HintAction } from "./lib/hints";
 import { InputMode } from "./lib/input-mode";
 import { LinkSearchMode } from "./lib/link-search-mode";
@@ -50,7 +55,7 @@ function send(win: Window, type: FrameMsg["type"]) {
 
 // ── State ─────────────────────────────────────────────────────────────────
 
-let settings: Settings = { ...DEFAULT_SETTINGS };
+let settings: Settings = createDefaultSettings();
 let seqBuffer = "";
 let hintSystem: HintSystem | null = null;
 let inputMode: InputMode | null = null;
@@ -116,6 +121,15 @@ function onFrameMessage(e: MessageEvent) {
 // ── Key handler ───────────────────────────────────────────────────────────
 
 function onKeyDown(e: KeyboardEvent) {
+  const bindings = activeBindings();
+  const bindingEntries = Object.entries(bindings) as Array<[ActionName, string]>;
+
+  if (bindingEntries.length === 0) {
+    seqBuffer = "";
+    deactivateModes();
+    return;
+  }
+
   if (linkSearchMode?.active) {
     linkSearchMode.handleKey(e);
     return;
@@ -150,12 +164,8 @@ function onKeyDown(e: KeyboardEvent) {
 
   seqBuffer += e.key;
 
-  const bindings = activeBindings();
-
   // Exact match → execute
-  const matched = (Object.keys(bindings) as ActionName[]).find(
-    (a) => bindings[a] === seqBuffer,
-  );
+  const matched = bindingEntries.find(([, value]) => value === seqBuffer)?.[0];
   if (matched) {
     e.preventDefault();
     e.stopPropagation();
@@ -165,8 +175,8 @@ function onKeyDown(e: KeyboardEvent) {
   }
 
   // Valid prefix → keep waiting
-  const isPrefix = (Object.values(bindings) as string[]).some(
-    (v) => v.startsWith(seqBuffer) && v !== seqBuffer,
+  const isPrefix = bindingEntries.some(
+    ([, value]) => value.startsWith(seqBuffer) && value !== seqBuffer,
   );
   if (isPrefix) {
     e.preventDefault();
@@ -177,9 +187,7 @@ function onKeyDown(e: KeyboardEvent) {
   const lastKey = e.key;
   seqBuffer = "";
 
-  const freshMatch = (Object.keys(bindings) as ActionName[]).find(
-    (a) => bindings[a] === lastKey,
-  );
+  const freshMatch = bindingEntries.find(([, value]) => value === lastKey)?.[0];
   if (freshMatch) {
     e.preventDefault();
     e.stopPropagation();
@@ -188,8 +196,8 @@ function onKeyDown(e: KeyboardEvent) {
   }
 
   if (
-    (Object.values(bindings) as string[]).some(
-      (v) => v.startsWith(lastKey) && v !== lastKey,
+    bindingEntries.some(
+      ([, value]) => value.startsWith(lastKey) && value !== lastKey,
     )
   ) {
     seqBuffer = lastKey;
@@ -450,16 +458,41 @@ function blurActiveEditableSoon(): void {
   });
 }
 
-function activeBindings(): Record<ActionName, string> {
-  return {
-    followLink:       settings.followLink,
+function deactivateModes() {
+  hintSystem?.deactivate();
+  inputMode?.deactivate();
+  linkSearchMode?.deactivate();
+  hintSystem = null;
+  inputMode = null;
+  linkSearchMode = null;
+}
+
+function activeBindings(): Partial<Record<ActionName, string>> {
+  const allBindings: Record<ActionName, string> = {
+    followLink: settings.followLink,
     followLinkNewTab: settings.followLinkNewTab,
-    copyLink:         settings.copyLink,
-    focusInput:       settings.focusInput,
-    searchLink:       settings.searchLink,
-    nextFrame:        settings.nextFrame,
-    mainFrame:        settings.mainFrame,
+    copyLink: settings.copyLink,
+    focusInput: settings.focusInput,
+    searchLink: settings.searchLink,
+    nextFrame: settings.nextFrame,
+    mainFrame: settings.mainFrame,
   };
+
+  const matchedRule = getEffectiveRule(settings.exclusionRules, window.location.href);
+  if (!matchedRule) return allBindings;
+
+  const passKeys = new Set(tokenizePassKeys(matchedRule.passKeys));
+  if (passKeys.size === 0) return {};
+
+  const filtered: Partial<Record<ActionName, string>> = {};
+  for (const action of ACTION_NAMES) {
+    const binding = allBindings[action];
+    if (!passKeys.has(binding)) {
+      filtered[action] = binding;
+    }
+  }
+
+  return filtered;
 }
 
 // ── Go ────────────────────────────────────────────────────────────────────

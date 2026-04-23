@@ -31,6 +31,34 @@
           <div id="bindings-container"></div>
         </section>
 
+        <!-- ── Site exceptions ── -->
+        <section class="card">
+          <h2 class="card-title">Site Exceptions</h2>
+          <p class="card-desc">
+            Disable HopKey shortcuts on specific URL patterns. Inspired by
+            Vimium's exclusions model: leave <strong>Disabled shortcuts</strong>
+            empty to disable all shortcuts on that site, or list only the
+            shortcuts you want HopKey to ignore (space-separated).
+          </p>
+
+          <div class="exceptions-head">
+            <span>URL pattern</span>
+            <span>Disabled shortcuts</span>
+            <span></span>
+          </div>
+
+          <div id="exceptions-container" class="exceptions-list"></div>
+          <p id="exceptions-empty" class="empty-note" style="display: none">
+            No exceptions yet.
+          </p>
+
+          <div class="exceptions-actions">
+            <button id="add-exception-btn" class="btn btn-ghost btn-sm">
+              Add exception
+            </button>
+          </div>
+        </section>
+
         <!-- ── Hint characters ── -->
         <section class="card">
           <h2 class="card-title">Hint Characters</h2>

@@ -4,8 +4,8 @@
  * Steps
  * ─────
  *  1. Clean dist/
- *  2. Compile content, background, options scripts with Bun's bundler
- *  3. Copy manifest.json, options.html, options.css
+ *  2. Compile content, options, popup scripts with Bun's bundler
+ *  3. Copy manifest.json and static HTML/CSS assets
  *  4. Generate PNG icons
  */
 
@@ -28,7 +28,8 @@ async function runBuild() {
   //    ensures chrome.* APIs are left untouched (no Node polyfills injected).
   const entries: { in: string; out: string }[] = [
     { in: "./src/content.ts", out: "content" },
-    { in: "./src/options.ts", out: "options"  },
+    { in: "./src/options.ts", out: "options" },
+    { in: "./src/popup.ts", out: "popup" },
   ];
 
   for (const entry of entries) {
@@ -51,10 +52,12 @@ async function runBuild() {
   }
 
   // 3. Static assets
-  await copyFile("./manifest.json",       `${DIST}/manifest.json`);
+  await copyFile("./manifest.json", `${DIST}/manifest.json`);
   await copyFile("./public/options.html", `${DIST}/options.html`);
-  await copyFile("./public/options.css",  `${DIST}/options.css`);
-  console.log("  ✓  manifest.json, options.html, options.css");
+  await copyFile("./public/options.css", `${DIST}/options.css`);
+  await copyFile("./public/popup.html", `${DIST}/popup.html`);
+  await copyFile("./public/popup.css", `${DIST}/popup.css`);
+  console.log("  ✓  manifest.json, options.html/css, popup.html/css");
 
   // 4. Icons (indigo #4f46e5 = R79 G70 B229)
   for (const size of [16, 48, 128] as const) {

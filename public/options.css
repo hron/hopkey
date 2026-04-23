@@ -198,6 +198,51 @@ body {
 }
 @keyframes blink { 0%,100% { opacity: 1 } 50% { opacity: .4 } }
 
+/* ── Site exceptions ───────────────────────────────────────────────────── */
+.exceptions-head,
+.exception-row {
+  display: grid;
+  grid-template-columns: minmax(240px, 1.6fr) minmax(180px, 1fr) auto;
+  align-items: center;
+  gap: .625rem;
+}
+
+.exceptions-head {
+  font-size: .75rem;
+  color: var(--clr-text-3);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-bottom: .5rem;
+  padding: 0 .2rem;
+}
+
+.exceptions-list {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+
+.exception-row {
+  padding: .4rem;
+  border: 1px solid var(--clr-border-dim);
+  border-radius: var(--radius-md);
+  background: color-mix(in oklab, var(--clr-surface) 92%, var(--clr-bg));
+}
+
+.exception-row .text-input {
+  width: 100%;
+}
+
+.empty-note {
+  font-size: .8125rem;
+  color: var(--clr-text-2);
+  padding: .35rem 0;
+}
+
+.exceptions-actions {
+  margin-top: .75rem;
+}
+
 /* ── Hint controls ─────────────────────────────────────────────────────── */
 .hint-row {
   display: flex;
@@ -342,6 +387,16 @@ body {
 .btn-ghost:hover { background: var(--clr-bg); color: var(--clr-text); }
 
 .btn-sm { padding: .3rem .75rem; font-size: .8125rem; }
+
+@media (max-width: 640px) {
+  .exceptions-head {
+    display: none;
+  }
+
+  .exception-row {
+    grid-template-columns: 1fr;
+  }
+}
 
 /* ── Modal ──────────────────────────────────────────────────────────────── */
 .modal-backdrop {

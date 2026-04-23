@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <title>HopKey</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="popup">
+      <header class="top">
+        <h1>HopKey</h1>
+        <p id="site-label" class="site-label">Loading…</p>
+      </header>
+
+      <p id="state-caption" class="state-caption"></p>
+
+      <p class="desc">
+        Add rules for this page. Leave <strong>Disabled shortcuts</strong> empty
+        to disable HopKey entirely on matching pages.
+      </p>
+
+      <p id="unsupported" class="note" style="display: none">
+        This page type doesn't support site exceptions.
+      </p>
+
+      <section id="rules-panel" class="rules-panel">
+        <div class="rules-head">
+          <span>URL pattern</span>
+          <span>Disabled shortcuts</span>
+          <span></span>
+        </div>
+
+        <div id="rules-container" class="rules-list"></div>
+
+        <p id="rules-empty" class="rules-empty" style="display: none">
+          No exceptions for this page.
+        </p>
+
+        <div class="panel-actions">
+          <button id="add-rule-btn" class="btn btn-ghost btn-sm">
+            Add rule for this site
+          </button>
+        </div>
+      </section>
+
+      <div id="feedback" class="feedback" style="display: none"></div>
+
+      <footer class="actions">
+        <button id="save-btn" class="btn btn-primary">Save changes</button>
+      </footer>
+
+      <a class="manage-link" href="options.html" target="_blank"
+        >Manage all exceptions</a
+      >
+    </main>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

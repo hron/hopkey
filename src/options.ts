@@ -10,14 +10,20 @@ import {
   loadSettings,
   saveSettings,
   DEFAULT_SETTINGS,
+  createDefaultSettings,
   ACTION_LABELS,
   ACTION_NAMES,
 } from "./lib/settings";
-import type { Settings, ActionName } from "./lib/settings";
+import type { Settings, ActionName, ExclusionRule } from "./lib/settings";
+import {
+  normalizePassKeys,
+  normalizePatternInput,
+  isValidPattern,
+} from "./lib/exclusions";
 
 // ── State ─────────────────────────────────────────────────────────────────
 
-let settings: Settings = { ...DEFAULT_SETTINGS };
+let settings: Settings = createDefaultSettings();
 
 /** Which action is currently being reassigned (null = modal closed) */
 let capturingFor: ActionName | null = null;
@@ -68,8 +74,11 @@ function syncControls() {
   (document.getElementById("hint-uppercase") as HTMLInputElement).checked =
     settings.hintUpperCase;
 
-  const candidate = normalizeHexColor(settings.giCandidateColor) ?? DEFAULT_SETTINGS.giCandidateColor;
-  const current = normalizeHexColor(settings.giCurrentColor) ?? DEFAULT_SETTINGS.giCurrentColor;
+  const candidate =
+    normalizeHexColor(settings.giCandidateColor) ??
+    DEFAULT_SETTINGS.giCandidateColor;
+  const current =
+    normalizeHexColor(settings.giCurrentColor) ?? DEFAULT_SETTINGS.giCurrentColor;
 
   settings.giCandidateColor = candidate;
   settings.giCurrentColor = current;
@@ -85,6 +94,71 @@ function syncControls() {
 
   (document.getElementById("link-search-fuzzy") as HTMLInputElement).checked =
     settings.linkSearchFuzzy;
+
+  renderExclusionRules();
+}
+
+function renderExclusionRules() {
+  const container = document.getElementById("exceptions-container")!;
+  const emptyState = document.getElementById("exceptions-empty")!;
+
+  container.innerHTML = "";
+
+  if (settings.exclusionRules.length === 0) {
+    emptyState.style.display = "block";
+    return;
+  }
+
+  emptyState.style.display = "none";
+
+  settings.exclusionRules.forEach((rule, index) => {
+    const row = document.createElement("div");
+    row.className = "exception-row";
+
+    const patternInput = document.createElement("input");
+    patternInput.type = "text";
+    patternInput.className = "text-input mono exception-pattern";
+    patternInput.placeholder = "*://example.com/*";
+    patternInput.autocomplete = "off";
+    patternInput.spellcheck = false;
+    patternInput.value = rule.pattern;
+    patternInput.addEventListener("input", () => {
+      settings.exclusionRules[index].pattern = patternInput.value;
+    });
+
+    const passKeysInput = document.createElement("input");
+    passKeysInput.type = "text";
+    passKeysInput.className = "text-input mono exception-passkeys";
+    passKeysInput.placeholder = "f F gi (empty = disable all)";
+    passKeysInput.autocomplete = "off";
+    passKeysInput.spellcheck = false;
+    passKeysInput.value = rule.passKeys;
+    passKeysInput.addEventListener("input", () => {
+      settings.exclusionRules[index].passKeys = passKeysInput.value;
+    });
+
+    const removeBtn = document.createElement("button");
+    removeBtn.className = "btn btn-sm btn-ghost";
+    removeBtn.textContent = "Remove";
+    removeBtn.addEventListener("click", () => {
+      settings.exclusionRules.splice(index, 1);
+      renderExclusionRules();
+    });
+
+    row.append(patternInput, passKeysInput, removeBtn);
+    container.appendChild(row);
+  });
+}
+
+function addExclusionRule() {
+  settings.exclusionRules.push({ pattern: "", passKeys: "" });
+  renderExclusionRules();
+
+  const patternInputs = document.querySelectorAll<HTMLInputElement>(
+    "#exceptions-container .exception-pattern",
+  );
+  const lastPatternInput = patternInputs[patternInputs.length - 1];
+  lastPatternInput?.focus();
 }
 
 // ── Static event listeners ────────────────────────────────────────────────
@@ -97,6 +171,9 @@ function wireStaticListeners() {
   document
     .getElementById("cancel-capture-btn")!
     .addEventListener("click", closeCapture);
+  document
+    .getElementById("add-exception-btn")!
+    .addEventListener("click", addExclusionRule);
 
   const hintCharsEl = document.getElementById(
     "hint-chars",
@@ -285,18 +362,57 @@ async function onSave() {
 
   candidateHexEl.value = candidate;
   currentHexEl.value = current;
-  (document.getElementById("gi-candidate-color") as HTMLInputElement).value = candidate;
-  (document.getElementById("gi-current-color") as HTMLInputElement).value = current;
+  (document.getElementById("gi-candidate-color") as HTMLInputElement).value =
+    candidate;
+  (document.getElementById("gi-current-color") as HTMLInputElement).value =
+    current;
+
+  const normalizedExclusions = normalizeExclusionRules();
+  if (!normalizedExclusions) return;
+  settings.exclusionRules = normalizedExclusions;
+  renderExclusionRules();
 
   await saveSettings(settings);
   showFeedback("Settings saved!", "success");
 }
 
 function onResetDefaults() {
-  settings = { ...DEFAULT_SETTINGS };
+  settings = createDefaultSettings();
   renderBindings();
   syncControls();
   showFeedback("Reset to defaults — click Save to apply.", "info");
+}
+
+function normalizeExclusionRules(): ExclusionRule[] | null {
+  const normalized: ExclusionRule[] = [];
+  const seenPatterns = new Set<string>();
+
+  for (const [index, rule] of settings.exclusionRules.entries()) {
+    const pattern = normalizePatternInput(rule.pattern);
+    const passKeys = normalizePassKeys(rule.passKeys);
+
+    if (!pattern && !passKeys) continue;
+
+    if (!pattern) {
+      showFeedback(`Exception #${index + 1} is missing a URL pattern.`, "error");
+      return null;
+    }
+
+    if (!isValidPattern(pattern)) {
+      showFeedback(`Exception #${index + 1} has an invalid URL pattern.`, "error");
+      return null;
+    }
+
+    if (seenPatterns.has(pattern)) {
+      showFeedback(`Duplicate exception pattern: ${pattern}`, "error");
+      return null;
+    }
+
+    seenPatterns.add(pattern);
+    normalized.push({ pattern, passKeys });
+  }
+
+  return normalized;
 }
 
 function normalizeHexColor(value: string): string | null {

@@ -1,0 +1,244 @@
+:root {
+  color-scheme: light;
+  --bg: #f6f6f9;
+  --surface: #ffffff;
+  --border: #dfdfeb;
+  --text: #1c1c2f;
+  --text-2: #656581;
+  --text-3: #8c8ca4;
+  --primary: #4f46e5;
+  --primary-h: #4338ca;
+  --success-bg: #f0fdf4;
+  --success-bd: #86efac;
+  --success-tx: #166534;
+  --info-bg: #eff6ff;
+  --info-bd: #93c5fd;
+  --info-tx: #1e40af;
+  --error-bg: #fef2f2;
+  --error-bd: #fca5a5;
+  --error-tx: #991b1b;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg: #0f1117;
+    --surface: #171b24;
+    --border: #30384a;
+    --text: #e6e9f2;
+    --text-2: #a8b0c3;
+    --text-3: #808aa2;
+    --primary: #818cf8;
+    --primary-h: #6366f1;
+    --success-bg: #10261b;
+    --success-bd: #2f8f5c;
+    --success-tx: #8de2b7;
+    --info-bg: #10243a;
+    --info-bd: #2f78c8;
+    --info-tx: #9cc7ff;
+    --error-bg: #32171a;
+    --error-bd: #b34a57;
+    --error-tx: #ffb3bd;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.popup {
+  width: 420px;
+  max-height: 580px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.top h1 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--primary);
+}
+
+.site-label {
+  margin: 4px 0 0;
+  font-size: 0.74rem;
+  color: var(--text-2);
+  word-break: break-all;
+}
+
+.state-caption {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.desc {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-2);
+  line-height: 1.45;
+}
+
+.note {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-2);
+}
+
+.rules-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.rules-head,
+.rule-row {
+  display: grid;
+  grid-template-columns: minmax(170px, 1.55fr) minmax(120px, 1fr) auto;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.rules-head {
+  font-size: 0.68rem;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0 0.15rem;
+}
+
+.rules-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  max-height: 260px;
+  overflow: auto;
+}
+
+.rule-row {
+  padding: 0.45rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.rule-row.invalid {
+  border-color: var(--error-bd);
+}
+
+.validation {
+  grid-column: 1 / -1;
+  margin: 0;
+  min-height: 1.2em;
+  font-size: 0.72rem;
+  color: var(--error-tx);
+}
+
+.rules-empty {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-2);
+}
+
+.panel-actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.text-input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  padding: 0.44rem 0.55rem;
+  font-size: 0.79rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.text-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--primary) 24%, transparent);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.btn {
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 0.42rem 0.8rem;
+  font-size: 0.79rem;
+  cursor: pointer;
+}
+
+.btn-sm {
+  padding: 0.35rem 0.62rem;
+  font-size: 0.74rem;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.btn-primary:hover {
+  background: var(--primary-h);
+  border-color: var(--primary-h);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-2);
+  border-color: var(--border);
+}
+
+.feedback {
+  border: 1px solid;
+  border-radius: 8px;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.76rem;
+}
+
+.feedback.success {
+  background: var(--success-bg);
+  border-color: var(--success-bd);
+  color: var(--success-tx);
+}
+
+.feedback.info {
+  background: var(--info-bg);
+  border-color: var(--info-bd);
+  color: var(--info-tx);
+}
+
+.feedback.error {
+  background: var(--error-bg);
+  border-color: var(--error-bd);
+  color: var(--error-tx);
+}
+
+.manage-link {
+  align-self: flex-start;
+  font-size: 0.78rem;
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.manage-link:hover {
+  text-decoration: underline;
+}

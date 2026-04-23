@@ -8,6 +8,13 @@ export type ActionName =
   | "nextFrame"
   | "mainFrame";
 
+export interface ExclusionRule {
+  /** URL wildcard pattern, e.g. *://mail.google.com/* */
+  pattern: string;
+  /** Space-separated HopKey shortcuts to pass through on matching pages. */
+  passKeys: string;
+}
+
 export interface Settings {
   followLink: string;
   followLinkNewTab: string;
@@ -21,6 +28,7 @@ export interface Settings {
   giCandidateColor: string;
   giCurrentColor: string;
   linkSearchFuzzy: boolean;
+  exclusionRules: ExclusionRule[];
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -36,6 +44,7 @@ export const DEFAULT_SETTINGS: Settings = {
   giCandidateColor: "#60a5fa",
   giCurrentColor: "#f59e0b",
   linkSearchFuzzy: true,
+  exclusionRules: [],
 };
 
 export const ACTION_LABELS: Record<ActionName, string> = {
@@ -50,16 +59,67 @@ export const ACTION_LABELS: Record<ActionName, string> = {
 
 export const ACTION_NAMES = Object.keys(ACTION_LABELS) as ActionName[];
 
+export function createDefaultSettings(): Settings {
+  return {
+    ...DEFAULT_SETTINGS,
+    exclusionRules: [],
+  };
+}
+
+export function cloneSettings(source: Settings): Settings {
+  return {
+    ...source,
+    exclusionRules: source.exclusionRules.map((rule) => ({ ...rule })),
+  };
+}
+
 export function loadSettings(): Promise<Settings> {
   return new Promise((resolve) => {
-    chrome.storage.sync.get(DEFAULT_SETTINGS, (result) => {
-      resolve(result as Settings);
+    chrome.storage.sync.get(createDefaultSettings(), (result) => {
+      const raw = result as Partial<Settings>;
+      const settings = createDefaultSettings();
+
+      settings.followLink = typeof raw.followLink === "string" ? raw.followLink : settings.followLink;
+      settings.followLinkNewTab =
+        typeof raw.followLinkNewTab === "string" ? raw.followLinkNewTab : settings.followLinkNewTab;
+      settings.copyLink = typeof raw.copyLink === "string" ? raw.copyLink : settings.copyLink;
+      settings.focusInput = typeof raw.focusInput === "string" ? raw.focusInput : settings.focusInput;
+      settings.nextFrame = typeof raw.nextFrame === "string" ? raw.nextFrame : settings.nextFrame;
+      settings.mainFrame = typeof raw.mainFrame === "string" ? raw.mainFrame : settings.mainFrame;
+      settings.searchLink = typeof raw.searchLink === "string" ? raw.searchLink : settings.searchLink;
+      settings.hintChars = typeof raw.hintChars === "string" ? raw.hintChars : settings.hintChars;
+      settings.hintUpperCase =
+        typeof raw.hintUpperCase === "boolean" ? raw.hintUpperCase : settings.hintUpperCase;
+      settings.giCandidateColor =
+        typeof raw.giCandidateColor === "string" ? raw.giCandidateColor : settings.giCandidateColor;
+      settings.giCurrentColor =
+        typeof raw.giCurrentColor === "string" ? raw.giCurrentColor : settings.giCurrentColor;
+      settings.linkSearchFuzzy =
+        typeof raw.linkSearchFuzzy === "boolean" ? raw.linkSearchFuzzy : settings.linkSearchFuzzy;
+
+      settings.exclusionRules = Array.isArray(raw.exclusionRules)
+        ? raw.exclusionRules
+            .flatMap((rule) => {
+              if (typeof rule !== "object" || rule === null) return [];
+              const pattern = (rule as { pattern?: unknown }).pattern;
+              const passKeys = (rule as { passKeys?: unknown }).passKeys;
+              if (typeof pattern !== "string") return [];
+              return [
+                {
+                  pattern,
+                  passKeys: typeof passKeys === "string" ? passKeys : "",
+                },
+              ];
+            })
+        : [];
+
+      resolve(settings);
     });
   });
 }
 
 export function saveSettings(settings: Settings): Promise<void> {
   return new Promise((resolve) => {
-    chrome.storage.sync.set(settings as Record<string, unknown>, resolve);
+    chrome.storage.sync.set(cloneSettings(settings) as Record<string, unknown>, resolve);
   });
 }
