@@ -8,6 +8,8 @@ interface HintEntry {
   hintEl: HTMLElement;
 }
 
+const HINT_EDGE_MARGIN_PX = 1;
+
 /**
  * Generates and manages the visual hint overlay for link selection.
  *
@@ -19,7 +21,11 @@ interface HintEntry {
 export class HintSystem {
   private readonly settings: Settings;
   private readonly action: HintAction;
-  private readonly onSelect: (url: string | null, el: HTMLElement, action: HintAction) => void;
+  private readonly onSelect: (
+    url: string | null,
+    el: HTMLElement,
+    action: HintAction,
+  ) => void;
 
   private container: HTMLElement | null = null;
   private hints: HintEntry[] = [];
@@ -118,14 +124,12 @@ export class HintSystem {
       if (rect.width === 0 && rect.height === 0) return;
 
       const label = labels[i];
+      if (!label) return;
 
       const badge = document.createElement("div");
       badge.dataset.label = label;
       badge.style.cssText = [
         "position:fixed",
-        `left:${Math.round(rect.left)}px`,
-        `top:${Math.round(rect.top)}px`,
-        "transform:translateY(-100%)",
         "background:#ffea00",
         "color:#000",
         "font:bold 11px/16px 'SF Mono',ui-monospace,monospace",
@@ -143,8 +147,37 @@ export class HintSystem {
         : label;
 
       this.container!.appendChild(badge);
+      this.positionBadge(badge, rect);
       this.hints.push({ label, element: el, hintEl: badge });
     });
+  }
+
+  private positionBadge(badge: HTMLElement, rect: DOMRect): void {
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    const badgeWidth = badge.offsetWidth;
+    const badgeHeight = badge.offsetHeight;
+
+    const minLeft = HINT_EDGE_MARGIN_PX;
+    const maxLeft = Math.max(minLeft, vw - badgeWidth - HINT_EDGE_MARGIN_PX);
+
+    const minTop = HINT_EDGE_MARGIN_PX;
+    const maxTop = Math.max(minTop, vh - badgeHeight - HINT_EDGE_MARGIN_PX);
+
+    let left = Math.round(rect.left);
+    let top = Math.round(rect.top - badgeHeight);
+
+    // Near top edge: place the hint on top of the target so it stays readable.
+    if (top < minTop) {
+      top = rect.top;
+    }
+
+    left = clamp(left, minLeft, maxLeft);
+    top = clamp(top, minTop, maxTop);
+
+    badge.style.left = `${left}px`;
+    badge.style.top = `${top}px`;
   }
 
   private refreshFilter(): void {
@@ -278,7 +311,7 @@ const CLICKABLE_INPUT_TYPES = new Set([
 ]);
 
 const EXPLICIT_CLICKABLE_SELECTOR =
-  'a[href], button, select, input, textarea, summary, details, label, ' +
+  "a[href], button, select, input, textarea, summary, details, label, " +
   '[role], [onclick], [contenteditable], [tabindex]:not([tabindex="-1"])';
 
 function hasExplicitClickableDescendant(el: Element): boolean {
@@ -325,7 +358,10 @@ function isPotentiallyClickable(el: HTMLElement): boolean {
   }
 
   const ce = el.getAttribute("contenteditable");
-  if (ce != null && ["", "true", "contenteditable"].includes(ce.toLowerCase())) {
+  if (
+    ce != null &&
+    ["", "true", "contenteditable"].includes(ce.toLowerCase())
+  ) {
     return true;
   }
 
@@ -343,7 +379,11 @@ function isPotentiallyClickable(el: HTMLElement): boolean {
   return false;
 }
 
-function isUserVisibleAndClickable(el: HTMLElement, vw: number, vh: number): boolean {
+function isUserVisibleAndClickable(
+  el: HTMLElement,
+  vw: number,
+  vh: number,
+): boolean {
   const r = el.getBoundingClientRect();
   if (r.width === 0 || r.height === 0) return false;
   if (r.bottom < 0 || r.top > vh) return false;
@@ -392,4 +432,8 @@ function isTopMostAtAnySamplePoint(
   }
 
   return false;
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
 }
