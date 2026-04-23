@@ -277,6 +277,22 @@ const CLICKABLE_INPUT_TYPES = new Set([
   "range",
 ]);
 
+const EXPLICIT_CLICKABLE_SELECTOR =
+  'a[href], button, select, input, textarea, summary, details, label, ' +
+  '[role], [onclick], [contenteditable], [tabindex]:not([tabindex="-1"])';
+
+function hasExplicitClickableDescendant(el: Element): boolean {
+  return !!el.querySelector(EXPLICIT_CLICKABLE_SELECTOR);
+}
+
+function hasPointerCursorOnSelfOrChildren(el: Element): boolean {
+  if (getComputedStyle(el).cursor === "pointer") return true;
+  for (const child of Array.from(el.children)) {
+    if (getComputedStyle(child).cursor === "pointer") return true;
+  }
+  return false;
+}
+
 function isPotentiallyClickable(el: HTMLElement): boolean {
   const tag = el.tagName.toLowerCase();
 
@@ -311,6 +327,17 @@ function isPotentiallyClickable(el: HTMLElement): boolean {
   const ce = el.getAttribute("contenteditable");
   if (ce != null && ["", "true", "contenteditable"].includes(ce.toLowerCase())) {
     return true;
+  }
+
+  const tabindex = el.getAttribute("tabindex");
+  if (tabindex != null && Number(tabindex) >= 0) {
+    return true;
+  }
+
+  // Heuristic for JS-only custom elements (e.g. <theme-switcher> with click
+  // handler on host and clickable SVG child).
+  if (tag.includes("-") && !hasExplicitClickableDescendant(el)) {
+    return hasPointerCursorOnSelfOrChildren(el);
   }
 
   return false;
