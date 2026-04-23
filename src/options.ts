@@ -9,6 +9,7 @@
 import {
   loadSettings,
   saveSettings,
+  resetSettings,
   DEFAULT_SETTINGS,
   createDefaultSettings,
   ACTION_LABELS,
@@ -378,12 +379,11 @@ async function onSave() {
 }
 
 async function onResetDefaults() {
-  settings = createDefaultSettings();
+  settings = await resetSettings();
   renderBindings();
   syncControls();
 
-  await saveSettings(settings);
-  showFeedback("Reset to defaults and saved.", "success");
+  showFeedback("Reset complete: cleared storage + restored defaults.", "success");
 }
 
 function normalizeExclusionRules(): ExclusionRule[] | null {

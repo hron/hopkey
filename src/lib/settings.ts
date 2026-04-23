@@ -134,3 +134,16 @@ export function saveSettings(settings: Settings): Promise<void> {
     chrome.storage.sync.set(cloneSettings(settings) as Record<string, unknown>, resolve);
   });
 }
+
+export function resetSettings(): Promise<Settings> {
+  const defaults = createDefaultSettings();
+
+  return new Promise((resolve) => {
+    chrome.storage.sync.clear(() => {
+      chrome.storage.sync.set(
+        cloneSettings(defaults) as Record<string, unknown>,
+        () => resolve(defaults),
+      );
+    });
+  });
+}
