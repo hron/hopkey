@@ -377,11 +377,13 @@ async function onSave() {
   showFeedback("Settings saved!", "success");
 }
 
-function onResetDefaults() {
+async function onResetDefaults() {
   settings = createDefaultSettings();
   renderBindings();
   syncControls();
-  showFeedback("Reset to defaults — click Save to apply.", "info");
+
+  await saveSettings(settings);
+  showFeedback("Reset to defaults and saved.", "success");
 }
 
 function normalizeExclusionRules(): ExclusionRule[] | null {
