@@ -61,10 +61,12 @@ async function runBuild() {
 
   // 4. Icons (indigo #4f46e5 = R79 G70 B229)
   for (const size of [16, 48, 128] as const) {
-    const png = solidPng(size, 79, 70, 229);
-    await Bun.write(`${DIST}/icons/icon${size}.png`, png);
+    await copyFile(
+      `./icons/icon-${size}.png`,
+      `${DIST}/icons/icon-${size}.png`,
+    );
   }
-  console.log("  ✓  icons/icon{16,48,128}.png");
+  console.log("  ✓  icons/icon-{16,48,128}.png");
 
   console.log("\n🎉  Build complete →", DIST);
 }
