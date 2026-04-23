@@ -219,11 +219,10 @@ function collectVisibleLinks(): HTMLElement[] {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
 
-  const candidates = Array.from(
-    document.querySelectorAll<HTMLElement>(
-      'a[href], button:not([disabled]), [role="link"], [role="button"]',
-    ),
-  );
+  // Vimium-like candidate discovery: scan all elements (including shadow DOM)
+  // and keep those that are likely clickable.
+  const all = collectAllElements(document.documentElement);
+  const candidates = all.filter(isPotentiallyClickable);
 
   return candidates
     .filter((el) => isUserVisibleAndClickable(el, vw, vh))
@@ -233,6 +232,88 @@ function collectVisibleLinks(): HTMLElement[] {
       const dy = ra.top - rb.top;
       return Math.abs(dy) > 8 ? dy : ra.left - rb.left;
     });
+}
+
+function collectAllElements(root: ParentNode | null): HTMLElement[] {
+  if (!root) return [];
+
+  const out: HTMLElement[] = [];
+  const stack: ParentNode[] = [root];
+
+  while (stack.length > 0) {
+    const node = stack.pop()!;
+    for (const el of Array.from(node.querySelectorAll<HTMLElement>("*"))) {
+      out.push(el);
+      if (el.shadowRoot) {
+        stack.push(el.shadowRoot);
+      }
+    }
+  }
+
+  return out;
+}
+
+const CLICKABLE_ROLES = new Set([
+  "button",
+  "tab",
+  "link",
+  "checkbox",
+  "menuitem",
+  "menuitemcheckbox",
+  "menuitemradio",
+  "radio",
+  "textbox",
+]);
+
+const CLICKABLE_INPUT_TYPES = new Set([
+  "button",
+  "submit",
+  "reset",
+  "image",
+  "file",
+  "checkbox",
+  "radio",
+  "color",
+  "range",
+]);
+
+function isPotentiallyClickable(el: HTMLElement): boolean {
+  const tag = el.tagName.toLowerCase();
+
+  if (tag === "a") {
+    return !!(el as HTMLAnchorElement).href;
+  }
+
+  if (tag === "button" || tag === "select") {
+    return !(el as HTMLButtonElement | HTMLSelectElement).disabled;
+  }
+
+  if (tag === "input") {
+    const input = el as HTMLInputElement;
+    if (input.disabled) return false;
+    const type = (input.getAttribute("type") ?? "text").toLowerCase();
+    return CLICKABLE_INPUT_TYPES.has(type);
+  }
+
+  if (tag === "summary" || tag === "details" || tag === "label") {
+    return true;
+  }
+
+  if (el.hasAttribute("onclick")) {
+    return true;
+  }
+
+  const role = el.getAttribute("role")?.toLowerCase();
+  if (role && CLICKABLE_ROLES.has(role)) {
+    return true;
+  }
+
+  const ce = el.getAttribute("contenteditable");
+  if (ce != null && ["", "true", "contenteditable"].includes(ce.toLowerCase())) {
+    return true;
+  }
+
+  return false;
 }
 
 function isUserVisibleAndClickable(el: HTMLElement, vw: number, vh: number): boolean {
@@ -280,7 +361,7 @@ function isTopMostAtAnySamplePoint(
   for (const [x, y] of points) {
     if (x < 0 || y < 0 || x >= vw || y >= vh) continue;
     const topEl = document.elementFromPoint(x, y);
-    if (!(topEl instanceof HTMLElement)) continue;
+    if (!(topEl instanceof Element)) continue;
 
     if (topEl === el || el.contains(topEl) || topEl.contains(el)) {
       return true;

@@ -233,7 +233,7 @@ function performHintAction(
 ) {
   if (action === "follow") {
     if (url) window.location.href = url;
-    else el.click();
+    else activateElement(el);
     return;
   }
 
@@ -241,7 +241,7 @@ function performHintAction(
     // window.open is not subject to the page's CSP when called from a
     // content script, and counts as a user gesture (triggered by keydown).
     if (url) window.open(url, "_blank");
-    else el.click();
+    else activateElement(el);
     return;
   }
 
@@ -294,10 +294,10 @@ function startLinkSearchMode() {
       linkSearchMode = null;
       if (openInNewTab) {
         if (url) window.open(url, "_blank");
-        else el.click();
+        else activateElement(el);
       } else {
         if (url) window.location.href = url;
-        else el.click();
+        else activateElement(el);
       }
     },
     () => {
@@ -344,6 +344,56 @@ function switchFrame(direction: "next" | "main") {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────
+
+function activateElement(el: HTMLElement): void {
+  const target = resolveActivationTarget(el);
+  const rect = target.getBoundingClientRect();
+
+  const x = Math.round(
+    Math.max(0, Math.min(window.innerWidth - 1, rect.left + rect.width / 2)),
+  );
+  const y = Math.round(
+    Math.max(0, Math.min(window.innerHeight - 1, rect.top + rect.height / 2)),
+  );
+
+  const mouseInit: MouseEventInit = {
+    bubbles: true,
+    cancelable: true,
+    composed: true,
+    view: window,
+    button: 0,
+    clientX: x,
+    clientY: y,
+  };
+
+  let pointerInit: PointerEventInit | null = null;
+  if (typeof PointerEvent === "function") {
+    pointerInit = {
+      ...mouseInit,
+      pointerId: 1,
+      pointerType: "mouse",
+      isPrimary: true,
+    };
+    target.dispatchEvent(new PointerEvent("pointerdown", pointerInit));
+  }
+
+  target.dispatchEvent(new MouseEvent("mousedown", mouseInit));
+
+  if (pointerInit) {
+    target.dispatchEvent(new PointerEvent("pointerup", pointerInit));
+  }
+
+  target.dispatchEvent(new MouseEvent("mouseup", mouseInit));
+  target.click();
+}
+
+function resolveActivationTarget(el: HTMLElement): HTMLElement {
+  const target = el.closest<HTMLElement>(
+    'button, a[href], input, select, textarea, summary, label, ' +
+    '[role="button"], [role="link"], [role="tab"], [onclick], [contenteditable]',
+  );
+  return target ?? el;
+}
 
 function focusSelf() {
   try { window.focus(); } catch { /* cross-origin best-effort */ }
