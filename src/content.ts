@@ -57,6 +57,7 @@ function send(win: Window, type: FrameMsg["type"]) {
 
 let settings: Settings = createDefaultSettings();
 let seqBuffer = "";
+let suppressSingleKeyUntil = 0;
 let hintSystem: HintSystem | null = null;
 let inputMode: InputMode | null = null;
 let linkSearchMode: LinkSearchMode | null = null;
@@ -126,6 +127,7 @@ function onKeyDown(e: KeyboardEvent) {
 
   if (bindingEntries.length === 0) {
     seqBuffer = "";
+    suppressSingleKeyUntil = 0;
     deactivateModes();
     return;
   }
@@ -148,6 +150,7 @@ function onKeyDown(e: KeyboardEvent) {
   if (isEditable(e.target)) {
     if (e.key === "Escape") {
       seqBuffer = "";
+      suppressSingleKeyUntil = 0;
       blurActiveEditableSoon();
     }
     return;
@@ -157,16 +160,33 @@ function onKeyDown(e: KeyboardEvent) {
 
   if (e.key === "Escape") {
     seqBuffer = "";
+    suppressSingleKeyUntil = 0;
     return;
   }
 
   if (e.key.length !== 1) return;
+
+  if (Date.now() >= suppressSingleKeyUntil) {
+    suppressSingleKeyUntil = 0;
+  }
 
   seqBuffer += e.key;
 
   // Exact match → execute
   const matched = bindingEntries.find(([, value]) => value === seqBuffer)?.[0];
   if (matched) {
+    const matchedBinding = bindings[matched] ?? "";
+    const isSingleKeyMatch = matchedBinding.length === 1;
+
+    // Heuristic for sites with multi-key shortcuts (e.g. Gmail "gi"):
+    // if an unhandled key was typed just before, let one single-key HopKey
+    // command pass through so the page can complete its sequence.
+    if (isSingleKeyMatch && suppressSingleKeyUntil > 0) {
+      suppressSingleKeyUntil = 0;
+      seqBuffer = "";
+      return;
+    }
+
     e.preventDefault();
     e.stopPropagation();
     seqBuffer = "";
@@ -183,26 +203,13 @@ function onKeyDown(e: KeyboardEvent) {
     return;
   }
 
-  // Dead end — restart with current key
-  const lastKey = e.key;
+  // Dead end — pass through, and briefly suppress one single-key HopKey
+  // command so websites can finish two-key sequences.
+  if (/^[a-zA-Z]$/.test(e.key)) {
+    suppressSingleKeyUntil = Date.now() + 1200;
+  }
+
   seqBuffer = "";
-
-  const freshMatch = bindingEntries.find(([, value]) => value === lastKey)?.[0];
-  if (freshMatch) {
-    e.preventDefault();
-    e.stopPropagation();
-    runAction(freshMatch);
-    return;
-  }
-
-  if (
-    bindingEntries.some(
-      ([, value]) => value.startsWith(lastKey) && value !== lastKey,
-    )
-  ) {
-    seqBuffer = lastKey;
-    e.preventDefault();
-  }
 }
 
 // ── Action dispatcher ─────────────────────────────────────────────────────
