@@ -32,12 +32,18 @@ export class InputMode {
   ) {
     this.candidateColor = safeHexColor(colors.candidate, "#60a5fa");
     this.currentColor = safeHexColor(colors.current, "#f59e0b");
+
+    const alpha = getOverlayAlphaTuning();
     this.candidateFill =
-      hexToRgba(this.candidateColor, 0.22) ?? "rgba(96, 165, 250, 0.22)";
+      hexToRgba(this.candidateColor, alpha.candidate) ??
+      `rgba(96, 165, 250, ${alpha.candidate})`;
     this.currentFill =
-      hexToRgba(this.currentColor, 0.30) ?? "rgba(245, 158, 11, 0.30)";
+      hexToRgba(this.currentColor, alpha.current) ??
+      `rgba(245, 158, 11, ${alpha.current})`;
     this.currentHalo =
-      hexToRgba(this.currentColor, 0.35) ?? "rgba(245, 158, 11, 0.35)";
+      hexToRgba(this.currentColor, alpha.halo) ??
+      `rgba(245, 158, 11, ${alpha.halo})`;
+
     this.onExit = onExit;
   }
 
@@ -256,6 +262,32 @@ const TEXT_INPUT_TYPES = new Set([
   "date",
   "tel",
 ]);
+
+interface OverlayAlphaTuning {
+  candidate: number;
+  current: number;
+  halo: number;
+}
+
+function getOverlayAlphaTuning(): OverlayAlphaTuning {
+  const isDark =
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+  if (isDark) {
+    return {
+      candidate: 0.32,
+      current: 0.42,
+      halo: 0.55,
+    };
+  }
+
+  return {
+    candidate: 0.22,
+    current: 0.30,
+    halo: 0.35,
+  };
+}
 
 function collectInputs(): HTMLElement[] {
   const vw = window.innerWidth;
