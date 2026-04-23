@@ -10,6 +10,52 @@ interface HintEntry {
 
 const HINT_EDGE_MARGIN_PX = 1;
 
+const HINT_OVERLAY_CSS = `
+  :host {
+    all: initial;
+    color-scheme: light dark;
+    forced-color-adjust: none;
+
+    --hopkey-hint-bg: #ffea00;
+    --hopkey-hint-fg: #111111;
+    --hopkey-hint-border: #c8a000;
+    --hopkey-hint-shadow: rgba(0, 0, 0, 0.35);
+    --hopkey-hint-prefix: #6b6b6b;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :host {
+      --hopkey-hint-bg: #3a2d00;
+      --hopkey-hint-fg: #ffe08a;
+      --hopkey-hint-border: #ffcf5a;
+      --hopkey-hint-shadow: rgba(0, 0, 0, 0.7);
+      --hopkey-hint-prefix: #b7a26b;
+    }
+  }
+
+  .hopkey-hint-badge {
+    position: fixed;
+    background: var(--hopkey-hint-bg);
+    color: var(--hopkey-hint-fg);
+    font: bold 11px/16px 'SF Mono', ui-monospace, monospace;
+    padding: 0 3px;
+    border: 1px solid var(--hopkey-hint-border);
+    border-radius: 2px;
+    box-shadow: 0 1px 4px var(--hopkey-hint-shadow);
+    white-space: nowrap;
+    pointer-events: none;
+    letter-spacing: 0.5px;
+    text-shadow: none;
+    filter: none;
+    mix-blend-mode: normal;
+  }
+
+  .hopkey-hint-prefix {
+    color: var(--hopkey-hint-prefix);
+    font-weight: normal;
+  }
+`;
+
 /**
  * Generates and manages the visual hint overlay for link selection.
  *
@@ -28,6 +74,7 @@ export class HintSystem {
   ) => void;
 
   private container: HTMLElement | null = null;
+  private shadow: ShadowRoot | null = null;
   private hints: HintEntry[] = [];
   private typed = "";
   private _active = false;
@@ -117,6 +164,13 @@ export class HintSystem {
       pointerEvents: "none",
       zIndex: "2147483647",
     });
+
+    this.shadow = this.container.attachShadow({ mode: "open" });
+
+    const style = document.createElement("style");
+    style.textContent = HINT_OVERLAY_CSS;
+    this.shadow.appendChild(style);
+
     document.documentElement.appendChild(this.container);
 
     links.forEach((el, i) => {
@@ -127,26 +181,14 @@ export class HintSystem {
       if (!label) return;
 
       const badge = document.createElement("div");
+      badge.className = "hopkey-hint-badge";
       badge.dataset.label = label;
-      badge.style.cssText = [
-        "position:fixed",
-        "background:#ffea00",
-        "color:#000",
-        "font:bold 11px/16px 'SF Mono',ui-monospace,monospace",
-        "padding:0 3px",
-        "border:1px solid #c8a000",
-        "border-radius:2px",
-        "box-shadow:0 1px 4px rgba(0,0,0,.35)",
-        "white-space:nowrap",
-        "pointer-events:none",
-        "letter-spacing:.5px",
-      ].join(";");
 
       badge.textContent = this.settings.hintUpperCase
         ? label.toUpperCase()
         : label;
 
-      this.container!.appendChild(badge);
+      this.shadow!.appendChild(badge);
       this.positionBadge(badge, rect);
       this.hints.push({ label, element: el, hintEl: badge });
     });
@@ -191,7 +233,7 @@ export class HintSystem {
       // Dim already-typed prefix, highlight remaining
       if (typed.length > 0) {
         const dim = document.createElement("span");
-        dim.style.cssText = "color:#999;font-weight:normal";
+        dim.className = "hopkey-hint-prefix";
         dim.textContent = this.settings.hintUpperCase
           ? typed.toUpperCase()
           : typed;
@@ -213,6 +255,7 @@ export class HintSystem {
   private teardown(): void {
     this.container?.remove();
     this.container = null;
+    this.shadow = null;
     this.hints = [];
     this.typed = "";
   }
