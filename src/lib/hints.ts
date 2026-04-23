@@ -323,16 +323,12 @@ function isUserVisibleAndClickable(el: HTMLElement, vw: number, vh: number): boo
   if (r.right < 0 || r.left > vw) return false;
 
   const s = getComputedStyle(el);
-  if (
-    s.visibility === "hidden" ||
-    s.display === "none" ||
-    s.opacity === "0" ||
-    s.pointerEvents === "none"
-  ) {
+  if (s.visibility === "hidden" || s.display === "none") {
     return false;
   }
 
-  // Reject elements fully covered by overlays/modals (Vimium-like practicality).
+  // Keep hover-revealed controls (often opacity:0 / pointer-events:none until hover).
+  // We still require viewport intersection + top-most hit-testing to avoid obvious noise.
   return isTopMostAtAnySamplePoint(el, r, vw, vh);
 }
 
