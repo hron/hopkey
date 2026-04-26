@@ -62,8 +62,13 @@ export class LinkSearchMode {
       "height:0",
       "pointer-events:none",
       "z-index:2147483647",
+      "margin:0",
+      "border:none",
+      "padding:0",
     ].join(";");
+    (container as HTMLElement & { popover?: string }).popover = "manual";
     (document.documentElement ?? document.body).appendChild(container);
+    (container as HTMLElement & { showPopover?(): void }).showPopover?.();
     this.markerContainer = container;
 
     this.entries = links.map((element) => {
@@ -90,6 +95,8 @@ export class LinkSearchMode {
     this.hudEl.id = "hopkey-link-search-hud";
     this.hudEl.style.cssText = [
       "position:fixed",
+      "top:auto",
+      "left:auto",
       "right:14px",
       "bottom:14px",
       "max-width:min(60vw,640px)",
@@ -104,8 +111,12 @@ export class LinkSearchMode {
       "pointer-events:none",
       "white-space:pre-wrap",
       "word-break:break-word",
+      "margin:0",
+      "border:none",
     ].join(";");
+    (this.hudEl as HTMLElement & { popover?: string }).popover = "manual";
     document.documentElement.appendChild(this.hudEl);
+    (this.hudEl as HTMLElement & { showPopover?(): void }).showPopover?.();
 
     this.updateMarkerRects();
     this.applyMatches();
@@ -123,8 +134,14 @@ export class LinkSearchMode {
       this.refreshRaf = 0;
     }
 
-    this.markerContainer?.remove();
-    this.hudEl?.remove();
+    if (this.markerContainer) {
+      (this.markerContainer as HTMLElement & { hidePopover?(): void }).hidePopover?.();
+      this.markerContainer.remove();
+    }
+    if (this.hudEl) {
+      (this.hudEl as HTMLElement & { hidePopover?(): void }).hidePopover?.();
+      this.hudEl.remove();
+    }
 
     this.markerContainer = null;
     this.hudEl = null;

@@ -68,9 +68,13 @@ export class InputMode {
       "height:0",
       "pointer-events:none",
       "z-index:2147483647",
+      "margin:0",
+      "border:none",
+      "padding:0",
     ].join(";");
-
+    (container as HTMLElement & { popover?: string }).popover = "manual";
     (document.documentElement ?? document.body).appendChild(container);
+    (container as HTMLElement & { showPopover?(): void }).showPopover?.();
     this.markerContainer = container;
 
     this.entries = inputs.map((element) => {
@@ -103,7 +107,10 @@ export class InputMode {
       this.refreshRaf = 0;
     }
 
-    this.markerContainer?.remove();
+    if (this.markerContainer) {
+      (this.markerContainer as HTMLElement & { hidePopover?(): void }).hidePopover?.();
+      this.markerContainer.remove();
+    }
     this.markerContainer = null;
     this.entries = [];
     this.selectedIndex = 0;
