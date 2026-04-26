@@ -61,20 +61,19 @@ export class InputMode {
     const container = document.createElement("div");
     container.id = "hopkey-input-marker-container";
     container.style.cssText = [
-      "position:absolute",
+      "position:fixed",
       "left:0",
       "top:0",
-      "width:0",
-      "height:0",
+      "width:100%",
+      "height:100%",
       "pointer-events:none",
       "z-index:2147483647",
       "margin:0",
       "border:none",
       "padding:0",
+      "overflow:visible",
     ].join(";");
-    (container as HTMLElement & { popover?: string }).popover = "manual";
-    (document.documentElement ?? document.body).appendChild(container);
-    (container as HTMLElement & { showPopover?(): void }).showPopover?.();
+    document.body.appendChild(container);
     this.markerContainer = container;
 
     this.entries = inputs.map((element) => {
@@ -108,7 +107,6 @@ export class InputMode {
     }
 
     if (this.markerContainer) {
-      (this.markerContainer as HTMLElement & { hidePopover?(): void }).hidePopover?.();
       this.markerContainer.remove();
     }
     this.markerContainer = null;
@@ -206,8 +204,8 @@ export class InputMode {
       }
 
       marker.style.display = "block";
-      marker.style.left = `${Math.round(rect.left + window.scrollX)}px`;
-      marker.style.top = `${Math.round(rect.top + window.scrollY)}px`;
+      marker.style.left = `${Math.round(rect.left)}px`;
+      marker.style.top = `${Math.round(rect.top)}px`;
       marker.style.width = `${Math.round(rect.width)}px`;
       marker.style.height = `${Math.round(rect.height)}px`;
       marker.style.borderRadius = getComputedStyle(element).borderRadius;

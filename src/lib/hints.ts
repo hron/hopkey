@@ -158,7 +158,6 @@ export class HintSystem {
     const labels = this.generateLabels(links.length);
 
     this.container = document.createElement("div");
-    (this.container as HTMLElement & { popover?: string }).popover = "manual";
     Object.assign(this.container.style, {
       position: "fixed",
       inset: "0",
@@ -177,8 +176,7 @@ export class HintSystem {
     style.textContent = HINT_OVERLAY_CSS;
     this.shadow.appendChild(style);
 
-    document.documentElement.appendChild(this.container);
-    (this.container as HTMLElement & { showPopover?(): void }).showPopover?.();
+    document.body.appendChild(this.container);
 
     links.forEach((el, i) => {
       const rect = el.getBoundingClientRect();
@@ -261,7 +259,6 @@ export class HintSystem {
 
   private teardown(): void {
     if (this.container) {
-      (this.container as HTMLElement & { hidePopover?(): void }).hidePopover?.();
       this.container.remove();
     }
     this.container = null;

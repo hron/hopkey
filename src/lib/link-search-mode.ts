@@ -55,20 +55,19 @@ export class LinkSearchMode {
     const container = document.createElement("div");
     container.id = "hopkey-link-search-marker-container";
     container.style.cssText = [
-      "position:absolute",
+      "position:fixed",
       "left:0",
       "top:0",
-      "width:0",
-      "height:0",
+      "width:100%",
+      "height:100%",
       "pointer-events:none",
       "z-index:2147483647",
       "margin:0",
       "border:none",
       "padding:0",
+      "overflow:visible",
     ].join(";");
-    (container as HTMLElement & { popover?: string }).popover = "manual";
-    (document.documentElement ?? document.body).appendChild(container);
-    (container as HTMLElement & { showPopover?(): void }).showPopover?.();
+    document.body.appendChild(container);
     this.markerContainer = container;
 
     this.entries = links.map((element) => {
@@ -114,9 +113,7 @@ export class LinkSearchMode {
       "margin:0",
       "border:none",
     ].join(";");
-    (this.hudEl as HTMLElement & { popover?: string }).popover = "manual";
-    document.documentElement.appendChild(this.hudEl);
-    (this.hudEl as HTMLElement & { showPopover?(): void }).showPopover?.();
+    document.body.appendChild(this.hudEl);
 
     this.updateMarkerRects();
     this.applyMatches();
@@ -135,11 +132,9 @@ export class LinkSearchMode {
     }
 
     if (this.markerContainer) {
-      (this.markerContainer as HTMLElement & { hidePopover?(): void }).hidePopover?.();
       this.markerContainer.remove();
     }
     if (this.hudEl) {
-      (this.hudEl as HTMLElement & { hidePopover?(): void }).hidePopover?.();
       this.hudEl.remove();
     }
 
@@ -251,8 +246,8 @@ export class LinkSearchMode {
         continue;
       }
 
-      entry.marker.style.left = `${Math.round(rect.left + window.scrollX)}px`;
-      entry.marker.style.top = `${Math.round(rect.top + window.scrollY)}px`;
+      entry.marker.style.left = `${Math.round(rect.left)}px`;
+      entry.marker.style.top = `${Math.round(rect.top)}px`;
       entry.marker.style.width = `${Math.round(rect.width)}px`;
       entry.marker.style.height = `${Math.round(rect.height)}px`;
       entry.marker.style.borderRadius = getComputedStyle(entry.element).borderRadius;
