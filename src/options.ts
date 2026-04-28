@@ -21,6 +21,7 @@ import {
   normalizePatternInput,
   isValidPattern,
 } from "./lib/exclusions";
+import { formatKeyEvent } from "./lib/keys";
 
 // ── State ─────────────────────────────────────────────────────────────────
 
@@ -28,7 +29,7 @@ let settings: Settings = createDefaultSettings();
 
 /** Which action is currently being reassigned (null = modal closed) */
 let capturingFor: ActionName | null = null;
-/** Keys typed so far in the capture modal */
+/** Key captured in the reassign modal (single key only) */
 let captureBuffer = "";
 
 // ── Init ──────────────────────────────────────────────────────────────────
@@ -287,14 +288,14 @@ function onCaptureKey(e: KeyboardEvent) {
   }
 
   if (e.key === "Backspace") {
-    captureBuffer = captureBuffer.slice(0, -1);
+    captureBuffer = "";
     updateCapturePreview();
     return;
   }
 
-  // Accept printable characters only, max 3
-  if (e.key.length === 1 && captureBuffer.length < 3) {
-    captureBuffer += e.key;
+  const keyStr = formatKeyEvent(e);
+  if (keyStr) {
+    captureBuffer = keyStr;
     updateCapturePreview();
   }
 }
@@ -308,7 +309,7 @@ function updateCapturePreview() {
     hintEl.textContent = "Type the new shortcut, then press Enter to confirm.";
   } else {
     previewEl.textContent = captureBuffer;
-    hintEl.textContent = "Press Enter to confirm, Backspace to edit, Escape to cancel.";
+    hintEl.textContent = "Press Enter to confirm, Backspace to clear, Escape to cancel.";
   }
 }
 

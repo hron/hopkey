@@ -28,6 +28,7 @@ import { getEffectiveRule, tokenizePassKeys } from "./lib/exclusions";
 import { HintSystem, type HintAction } from "./lib/hints";
 import { InputMode } from "./lib/input-mode";
 import { LinkSearchMode } from "./lib/link-search-mode";
+import { formatKeyEvent } from "./lib/keys";
 
 // ── postMessage protocol ──────────────────────────────────────────────────
 //
@@ -156,21 +157,20 @@ function onKeyDown(e: KeyboardEvent) {
     return;
   }
 
-  if (e.ctrlKey || e.altKey || e.metaKey) return;
-
   if (e.key === "Escape") {
     seqBuffer = "";
     suppressSingleKeyUntil = 0;
     return;
   }
 
-  if (e.key.length !== 1) return;
+  const keyStr = formatKeyEvent(e);
+  if (!keyStr) return;
 
   if (Date.now() >= suppressSingleKeyUntil) {
     suppressSingleKeyUntil = 0;
   }
 
-  seqBuffer += e.key;
+  seqBuffer += keyStr;
 
   // Exact match → execute
   const matched = bindingEntries.find(([, value]) => value === seqBuffer)?.[0];
@@ -205,7 +205,7 @@ function onKeyDown(e: KeyboardEvent) {
 
   // Dead end — pass through, and briefly suppress one single-key HopKey
   // command so websites can finish two-key sequences.
-  if (/^[a-zA-Z]$/.test(e.key)) {
+  if (!e.ctrlKey && !e.altKey && !e.metaKey && e.key.length === 1 && /^[a-zA-Z]$/.test(e.key)) {
     suppressSingleKeyUntil = Date.now() + 1200;
   }
 

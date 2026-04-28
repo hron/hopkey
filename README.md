@@ -72,7 +72,7 @@ Open the settings page from `chrome://extensions` → HopKey → **Details** →
 **Extension options**, or right-click the toolbar icon → **Options**.
 
 You can:
-- Reassign any shortcut (sequences up to 3 keys; conflict detection included)
+- Reassign any shortcut (supports modifiers like `ctrl-` / `alt-` / `shift-`; conflict detection included)
 - Add/edit/remove site exceptions (URL pattern + disabled shortcuts)
   - Multiple matching rules are merged; any matching rule with empty shortcuts disables HopKey entirely
 - Change the hint character set
