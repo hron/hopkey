@@ -39,7 +39,7 @@ async function runBuild() {
       naming: `${entry.out}.js`,
       target: "browser",
       format: "iife",
-      minify: !isWatch,
+      minify: false,
       sourcemap: isWatch ? "inline" : "none",
     });
 
@@ -51,7 +51,11 @@ async function runBuild() {
     console.log(`  ✓  ${entry.out}.js`);
   }
 
-  // 3. Static assets
+  // 3. Background script (plain JS, not bundled)
+  await copyFile("./src/background.js", `${DIST}/background.js`);
+  console.log("  ✓  background.js");
+
+  // 4. Static assets
   await copyFile("./manifest.json", `${DIST}/manifest.json`);
   await copyFile("./public/options.html", `${DIST}/options.html`);
   await copyFile("./public/options.css", `${DIST}/options.css`);
@@ -59,7 +63,7 @@ async function runBuild() {
   await copyFile("./public/popup.css", `${DIST}/popup.css`);
   console.log("  ✓  manifest.json, options.html/css, popup.html/css");
 
-  // 4. Icons (indigo #4f46e5 = R79 G70 B229)
+  // 5. Icons (indigo #4f46e5 = R79 G70 B229)
   for (const size of [16, 48, 128] as const) {
     await copyFile(
       `./icons/icon-${size}.png`,

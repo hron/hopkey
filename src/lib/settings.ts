@@ -2,6 +2,7 @@
 export type ActionName =
   | "followLink"
   | "followLinkNewTab"
+  | "followLinkNewWindow"
   | "copyLink"
   | "focusInput"
   | "searchLink"
@@ -18,6 +19,7 @@ export interface ExclusionRule {
 export interface Settings {
   followLink: string;
   followLinkNewTab: string;
+  followLinkNewWindow: string;
   copyLink: string;
   focusInput: string;
   nextFrame: string;
@@ -34,6 +36,7 @@ export interface Settings {
 export const DEFAULT_SETTINGS: Settings = {
   followLink: "f",
   followLinkNewTab: "F",
+  followLinkNewWindow: "ctrl-alt-,",
   copyLink: "k",
   focusInput: "i",
   nextFrame: "h",
@@ -50,6 +53,7 @@ export const DEFAULT_SETTINGS: Settings = {
 export const ACTION_LABELS: Record<ActionName, string> = {
   followLink: "Follow link",
   followLinkNewTab: "Follow link in new tab",
+  followLinkNewWindow: "Follow link in new window",
   copyLink: "Copy link URL",
   focusInput: "Focus input field",
   searchLink: "Search link by text",
@@ -82,6 +86,8 @@ export function loadSettings(): Promise<Settings> {
       settings.followLink = typeof raw.followLink === "string" ? raw.followLink : settings.followLink;
       settings.followLinkNewTab =
         typeof raw.followLinkNewTab === "string" ? raw.followLinkNewTab : settings.followLinkNewTab;
+      settings.followLinkNewWindow =
+        typeof raw.followLinkNewWindow === "string" ? raw.followLinkNewWindow : settings.followLinkNewWindow;
       settings.copyLink = typeof raw.copyLink === "string" ? raw.copyLink : settings.copyLink;
       settings.focusInput = typeof raw.focusInput === "string" ? raw.focusInput : settings.focusInput;
       settings.nextFrame = typeof raw.nextFrame === "string" ? raw.nextFrame : settings.nextFrame;

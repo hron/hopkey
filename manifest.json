@@ -3,7 +3,10 @@
   "name": "HopKey",
   "version": "1.0.0",
   "description": "Minimal keyboard navigation: follow links, copy links, focus inputs, switch frames.",
-  "permissions": ["storage", "tabs"],
+  "permissions": ["storage", "tabs", "windows"],
+  "background": {
+    "service_worker": "background.js"
+  },
   "host_permissions": ["<all_urls>"],
   "content_scripts": [
     {

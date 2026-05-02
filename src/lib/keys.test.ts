@@ -72,4 +72,8 @@ describe("formatKeyEvent", () => {
   test("ctrl+Escape", () => {
     expect(formatKeyEvent(mockEvent({ key: "Escape", ctrlKey: true }))).toBe("ctrl-Escape");
   });
+
+  test("ctrl+alt+comma", () => {
+    expect(formatKeyEvent(mockEvent({ key: ",", ctrlKey: true, altKey: true }))).toBe("ctrl-alt-,");
+  });
 });

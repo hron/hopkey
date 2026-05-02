@@ -1,6 +1,7 @@
 import type { Settings } from "../lib/settings";
+import type { HintAction } from "./hint-actions";
 
-export type HintAction = "follow" | "follow-new-tab" | "copy";
+export type { HintAction };
 
 interface HintEntry {
   label: string;
