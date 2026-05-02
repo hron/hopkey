@@ -1,84 +1,86 @@
 import { test, expect, type Page } from "@playwright/test";
-import { execSync } from "node:child_process";
+import { createServer } from "node:http";
 import path from "node:path";
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Build (run once before all tests)
+// Paths
 // ═══════════════════════════════════════════════════════════════════════════
 
 const distDir = path.resolve(__dirname, "../dist");
 
-test.beforeAll(() => {
-  console.log("[e2e] Building extension...");
-  execSync("bun run build", {
-    cwd: path.resolve(__dirname, ".."),
-    stdio: "pipe",
+// ═══════════════════════════════════════════════════════════════════════════
+// Test server — serves different HTML for each path
+// ═══════════════════════════════════════════════════════════════════════════
+
+let serverUrl = "";
+let server: ReturnType<typeof createServer> | null = null;
+
+test.beforeAll(async () => {
+  server = createServer((req, res) => {
+    res.writeHead(200, { "Content-Type": "text/html" });
+    const p = req.url ?? "/";
+    if (p === "/" || p === "/basic") res.end(basicPage());
+    else if (p === "/page2") res.end(page2Html());
+    else if (p === "/frames") res.end(framedPage());
+    else if (p === "/frame-a") res.end(frameAHtml());
+    else if (p === "/frame-b") res.end(frameBHtml());
+    else res.end(`<html><body><h1>${p}</h1></body></html>`);
   });
+  await new Promise<void>((resolve) => server!.listen(0, "127.0.0.1", resolve));
+  const addr = server!.address() as { port: number } | null;
+  if (!addr) throw new Error("Server failed to start");
+  serverUrl = `http://127.0.0.1:${addr.port}`;
+});
+
+test.afterAll(() => {
+  server?.close();
+  server = null;
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Chrome API stubs — minimal, not mocking behavior under test
+// Chrome API stubs — only the extension-runtime surface the content script
+// needs.  Not mocking behavior under test.
 // ═══════════════════════════════════════════════════════════════════════════
 
-/**
- * Sets up the minimal chrome.* API surface the content script needs.
- * This is infrastructure, not behavior mocking.
- *
- * Returns `sendMessageCalls` — an array that captures calls to
- * `chrome.runtime.sendMessage` for the `followLinkNewWindow` path.
- */
-async function installChromeStubs(page: Page): Promise<{ sendMessageCalls: unknown[] }> {
+async function installChromeStubs(page: Page): Promise<{
+  sendMessageCalls: unknown[];
+}> {
   const sendMessageCalls: unknown[] = [];
-
   await page.exposeFunction("__hopkeySendMessage", (msg: unknown) => {
     sendMessageCalls.push(msg);
   });
 
   await page.addInitScript(() => {
-    // ── storage ──────────────────────────────────────────────────────────
-    // Provide the settings the content script expects.
-    // This is configuration, not behavior under test.
-    const store: Record<string, unknown> = {
-      followLink: "f",
-      followLinkNewTab: "F",
-      followLinkNewWindow: "ctrl-alt-,",
-      copyLink: "k",
-      focusInput: "i",
-      nextFrame: "h",
-      mainFrame: "H",
-      searchLink: "l",
-      hintChars: "sadfjklewcmpgh",
-      hintUpperCase: false,
-      inputCandidateColor: "#60a5fa",
-      inputCurrentColor: "#f59e0b",
-      linkSearchFuzzy: true,
-      exclusionRules: [],
-    };
-
-    // ── chrome API ───────────────────────────────────────────────────────
     (window as any).chrome = {
       runtime: {
         sendMessage(msg: unknown, cb?: () => void) {
-          // Forward to the test so we can assert on it for
-          // followLinkNewWindow.  We do NOT call the real background
-          // because we are not inside an extension context.
           (window as any).__hopkeySendMessage(msg);
           cb?.();
         },
       },
       storage: {
         sync: {
-          get(_keys: unknown, callback: (result: unknown) => void) {
-            callback(store);
+          get(_keys: unknown, callback: (result: Record<string, unknown>) => void) {
+            callback({
+              followLink: "f",
+              followLinkNewTab: "F",
+              followLinkNewWindow: "ctrl-alt-,",
+              copyLink: "k",
+              focusInput: "i",
+              nextFrame: "h",
+              mainFrame: "H",
+              searchLink: "l",
+              hintChars: "sadfjklewcmpgh",
+              hintUpperCase: false,
+              inputCandidateColor: "#60a5fa",
+              inputCurrentColor: "#f59e0b",
+              linkSearchFuzzy: true,
+              exclusionRules: [],
+            });
           },
-          set(_data: unknown, callback?: () => void) {
-            callback?.();
-          },
+          set(_data: unknown, callback?: () => void) { callback?.(); },
         },
-        onChanged: {
-          addListener: () => {},
-          removeListener: () => {},
-        },
+        onChanged: { addListener: () => {}, removeListener: () => {} },
       },
     };
   });
@@ -87,15 +89,10 @@ async function installChromeStubs(page: Page): Promise<{ sendMessageCalls: unkno
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Page helpers — serve test HTML via route interception (no local servers)
+// Page templates
 // ═══════════════════════════════════════════════════════════════════════════
 
-// Using localhost makes the page a secure context so the Clipboard API
-// (navigator.clipboard) is available.  page.route() intercepts
-// requests, so no real server is ever started.
-const TEST_HOST = "localhost";
-
-function basicPage(extraBody = ""): string {
+function basicPage(): string {
   return `<!DOCTYPE html>
 <html>
 <head><title>HopKey Test</title></head>
@@ -103,10 +100,9 @@ function basicPage(extraBody = ""): string {
   <h1>Test Page</h1>
   <a href="https://example.com" id="link1">Example Link</a>
   <a href="https://github.com" id="link2">GitHub</a>
-  <a href="http://localhost/page2" id="internal-link">Internal Page</a>
+  <a href="${serverUrl}/page2" id="internal-link">Internal Page</a>
   <input type="text" id="input1" placeholder="text input" style="display:block;margin:10px 0;">
   <textarea id="textarea1" placeholder="textarea"></textarea>
-  ${extraBody}
 </body>
 </html>`;
 }
@@ -126,8 +122,8 @@ function framedPage(): string {
 <body>
   <h1>Main Frame</h1>
   <input type="text" id="main-input" placeholder="main input" style="display:block;margin:5px 0;">
-  <iframe src="http://${TEST_HOST}/frame-a" id="frame-a" style="width:400px;height:150px;"></iframe>
-  <iframe src="http://${TEST_HOST}/frame-b" id="frame-b" style="width:400px;height:150px;"></iframe>
+  <iframe src="${serverUrl}/frame-a" id="frame-a" style="width:400px;height:150px;"></iframe>
+  <iframe src="${serverUrl}/frame-b" id="frame-b" style="width:400px;height:150px;"></iframe>
 </body>
 </html>`;
 }
@@ -155,88 +151,30 @@ function frameBHtml(): string {
 </html>`;
 }
 
-/**
- * Install routes on `page` so that every request to `hopkey.test` is
- * served from our inline templates instead of hitting the network.
- */
-/**
- * Install context-level routes so that new tabs opened via window.open
- * (which create brand-new pages) are also intercepted.
- *
- * Called once per test.  Since tests run serially (workers:1), storing
- * the handler in a module-level variable is safe.
- */
-let _routeHandler: ((route: { request: () => { url: () => string } }) => Promise<void>) | null = null;
-
-async function setupRoutes(page: Page): Promise<void> {
-  // Remove any previously installed handler (idempotent)
-  if (_routeHandler) {
-    await page.context().unroute("**/*", _routeHandler);
-    _routeHandler = null;
-  }
-
-  const ctx = page.context();
-  const handler = (route: any) => {
-    const url = new URL(route.request().url());
-
-    if (url.hostname === TEST_HOST) {
-      if (url.pathname === "/page2") {
-        return route.fulfill({ status: 200, contentType: "text/html", body: page2Html() });
-      }
-      if (url.pathname === "/frames") {
-        return route.fulfill({ status: 200, contentType: "text/html", body: framedPage() });
-      }
-      if (url.pathname === "/frame-a") {
-        return route.fulfill({ status: 200, contentType: "text/html", body: frameAHtml() });
-      }
-      if (url.pathname === "/frame-b") {
-        return route.fulfill({ status: 200, contentType: "text/html", body: frameBHtml() });
-      }
-      return route.fulfill({ status: 200, contentType: "text/html", body: basicPage() });
-    }
-
-    return route.fulfill({
-      status: 200,
-      contentType: "text/html",
-      body: `<html><body><h1>${url.hostname}${url.pathname}</h1></body></html>`,
-    });
-  };
-
-  await ctx.route("**/*", handler);
-  _routeHandler = handler;
-}
-
-async function goToBasic(page: Page): Promise<void> {
-  await setupRoutes(page);
-  await page.goto(`http://${TEST_HOST}`, { waitUntil: "domcontentloaded" });
-}
-
-async function goToFramed(page: Page): Promise<void> {
-  await setupRoutes(page);
-  await page.goto(`http://${TEST_HOST}/frames`, { waitUntil: "domcontentloaded" });
-}
-
 // ═══════════════════════════════════════════════════════════════════════════
-// Content-script injection
+// Navigation + injection helpers
 // ═══════════════════════════════════════════════════════════════════════════
 
-/**
- * Inject the production content.js bundle into the page so that all
- * keyboard shortcuts are handled identically to the real extension.
- */
 async function injectContentScript(page: Page): Promise<void> {
   await page.addScriptTag({ path: path.join(distDir, "content.js") });
-  // Let the async init() complete and event listeners be registered.
   await page.waitForTimeout(300);
 }
 
+async function goToBasic(page: Page): Promise<void> {
+  await page.goto(`${serverUrl}/basic`, { waitUntil: "domcontentloaded" });
+}
+
+async function goToFramed(page: Page): Promise<void> {
+  await page.goto(`${serverUrl}/frames`, { waitUntil: "domcontentloaded" });
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
-// Interaction helpers
+// Keyboard helpers
 // ═══════════════════════════════════════════════════════════════════════════
 
 async function press(page: Page, key: string): Promise<void> {
   await page.keyboard.press(key);
-  await page.waitForTimeout(150);
+  await page.waitForTimeout(200);
 }
 
 async function typeChars(page: Page, chars: string): Promise<void> {
@@ -250,7 +188,6 @@ async function dismiss(page: Page): Promise<void> {
   await press(page, "Escape");
 }
 
-/** Returns the text content of visible hint badges, or empty array. */
 async function visibleHintLabels(page: Page): Promise<string[]> {
   return page.evaluate(() => {
     const out: string[] = [];
@@ -267,18 +204,15 @@ async function visibleHintLabels(page: Page): Promise<string[]> {
   });
 }
 
-/** Returns true when at least one hint badge is visible. */
 async function hintsAreVisible(page: Page): Promise<boolean> {
-  const labels = await visibleHintLabels(page);
-  return labels.length > 0;
+  return (await visibleHintLabels(page)).length > 0;
 }
 
-/** Type the key sequence for the Nth visible hint (0-indexed). */
 async function selectNthHint(page: Page, n: number): Promise<void> {
   const labels = await visibleHintLabels(page);
   if (n < labels.length && labels[n]) {
     await typeChars(page, labels[n]);
-    await page.waitForTimeout(200);
+    await page.waitForTimeout(250);
   }
 }
 
@@ -287,6 +221,8 @@ async function selectNthHint(page: Page, n: number): Promise<void> {
 // ═══════════════════════════════════════════════════════════════════════════
 
 test.describe("HopKey keyboard shortcuts", () => {
+  // ── followLink (f) ───────────────────────────────────────────────────
+
   test.describe("followLink (f)", () => {
     test("activates hint mode and shows hint badges", async ({ page }) => {
       await installChromeStubs(page);
@@ -306,13 +242,9 @@ test.describe("HopKey keyboard shortcuts", () => {
       await press(page, "f");
       expect(await hintsAreVisible(page)).toBe(true);
 
-      // Select the third link (internal link to /page2)
       await selectNthHint(page, 2);
-
-      // Navigation should happen synchronously via location.href=
       await page.waitForURL("**/page2", { timeout: 5000 });
-      const body = await page.textContent("body");
-      expect(body).toContain("Navigation succeeded");
+      expect(await page.textContent("body")).toContain("Navigation succeeded");
     });
 
     test("Escape dismisses hints", async ({ page }) => {
@@ -341,31 +273,51 @@ test.describe("HopKey keyboard shortcuts", () => {
       expect(await hintsAreVisible(page)).toBe(true);
     });
 
-    test("selecting a hint opens link in new tab via window.open", async ({ page, context }) => {
+    test("selecting a hint opens link in new tab", async ({ page }) => {
       await installChromeStubs(page);
       await goToBasic(page);
       await injectContentScript(page);
 
-      // Verify hints appear before trying to select
       await page.keyboard.press("Shift+F");
       await page.waitForTimeout(200);
       expect(await hintsAreVisible(page)).toBe(true);
 
-      const newPagePromise = context.waitForEvent("page", { timeout: 5000 });
+      // Spy on window.open — the test can't resolve external URLs
+      const openCalls: Array<{ url: string; target: string }> = [];
+      await page.exposeFunction("__captureOpen", (url: string, target: string) => {
+        openCalls.push({ url, target });
+      });
+      await page.evaluate(() => {
+        const orig = window.open.bind(window);
+        (window as any).open = (url: string, target: string) => {
+          (window as any).__captureOpen(url, target);
+          return null; // don't actually open
+        };
+      });
 
       await selectNthHint(page, 0);
       await page.waitForTimeout(300);
 
-      const newPage = await newPagePromise;
-      expect(newPage.url()).toContain("example.com");
-      await newPage.close();
+      expect(openCalls.length).toBe(1);
+      expect(openCalls[0].url).toContain("example.com");
+      expect(openCalls[0].target).toBe("_blank");
     });
   });
 
   // ── followLinkNewWindow (ctrl-alt-,) ─────────────────────────────────
 
   test.describe("followLinkNewWindow (ctrl-alt-,)", () => {
-    test("activates hint mode and sends runtime message on selection", async ({ page }) => {
+    test("activates hint mode with Ctrl+Alt+,", async ({ page }) => {
+      await installChromeStubs(page);
+      await goToBasic(page);
+      await injectContentScript(page);
+
+      await page.keyboard.press("Control+Alt+Comma");
+      await page.waitForTimeout(200);
+      expect(await hintsAreVisible(page)).toBe(true);
+    });
+
+    test("selecting a hint calls chrome.runtime.sendMessage", async ({ page }) => {
       const { sendMessageCalls } = await installChromeStubs(page);
       await goToBasic(page);
       await injectContentScript(page);
@@ -402,7 +354,11 @@ test.describe("HopKey keyboard shortcuts", () => {
       await goToBasic(page);
       await injectContentScript(page);
 
-      await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+      // localhost is a secure context → clipboard API available
+      await context.grantPermissions(
+        ["clipboard-read", "clipboard-write"],
+        { origin: serverUrl },
+      );
 
       await press(page, "k");
       await page.waitForTimeout(200);
@@ -460,7 +416,6 @@ test.describe("HopKey keyboard shortcuts", () => {
       await press(page, "i");
       await page.waitForTimeout(200);
 
-      // Tab to second input
       await page.keyboard.press("Tab");
       await page.waitForTimeout(100);
 
@@ -471,9 +426,6 @@ test.describe("HopKey keyboard shortcuts", () => {
         const el = document.activeElement;
         return el ? (el as HTMLElement).id : "none";
       });
-      // Second input in order: input1 then textarea1
-      // Actually the sort order is top-to-bottom, left-to-right.
-      // input1 is above textarea1, so first is input1, second is textarea1.
       expect(focused).toBe("textarea1");
     });
 
@@ -542,7 +494,6 @@ test.describe("HopKey keyboard shortcuts", () => {
       await press(page, "l");
       await page.waitForTimeout(200);
 
-      // Type something that matches the internal link
       await typeChars(page, "internal");
       await page.waitForTimeout(200);
 
@@ -551,17 +502,29 @@ test.describe("HopKey keyboard shortcuts", () => {
       expect(await page.textContent("body")).toContain("Navigation succeeded");
     });
 
-    test("Shift+Enter opens link in new tab", async ({ page, context }) => {
+    test("Shift+Enter opens link in new tab", async ({ page }) => {
       await installChromeStubs(page);
       await goToBasic(page);
       await injectContentScript(page);
 
       await press(page, "l");
       await page.waitForTimeout(200);
-      // Verify HUD is visible
-      expect(await page.evaluate(() => !!document.querySelector("#hopkey-link-search-hud"))).toBe(true);
+      expect(
+        await page.evaluate(() => !!document.querySelector("#hopkey-link-search-hud")),
+      ).toBe(true);
 
-      const newPagePromise = context.waitForEvent("page", { timeout: 5000 });
+      // Spy on window.open
+      const openCalls: Array<{ url: string; target: string }> = [];
+      await page.exposeFunction("__captureOpen2", (url: string, target: string) => {
+        openCalls.push({ url, target });
+      });
+      await page.evaluate(() => {
+        const orig = window.open.bind(window);
+        (window as any).open = (url: string, target: string) => {
+          (window as any).__captureOpen2(url, target);
+          return null;
+        };
+      });
 
       await typeChars(page, "example");
       await page.waitForTimeout(200);
@@ -569,9 +532,9 @@ test.describe("HopKey keyboard shortcuts", () => {
       await page.keyboard.press("Shift+Enter");
       await page.waitForTimeout(300);
 
-      const newPage = await newPagePromise;
-      expect(newPage.url()).toContain("example.com");
-      await newPage.close();
+      expect(openCalls.length).toBe(1);
+      expect(openCalls[0].url).toContain("example.com");
+      expect(openCalls[0].target).toBe("_blank");
     });
 
     test("Escape dismisses link search mode", async ({ page }) => {
@@ -580,10 +543,14 @@ test.describe("HopKey keyboard shortcuts", () => {
       await injectContentScript(page);
 
       await press(page, "l");
-      expect(await page.evaluate(() => !!document.querySelector("#hopkey-link-search-hud"))).toBe(true);
+      expect(
+        await page.evaluate(() => !!document.querySelector("#hopkey-link-search-hud")),
+      ).toBe(true);
 
       await dismiss(page);
-      expect(await page.evaluate(() => !!document.querySelector("#hopkey-link-search-hud"))).toBe(false);
+      expect(
+        await page.evaluate(() => !!document.querySelector("#hopkey-link-search-hud")),
+      ).toBe(false);
     });
   });
 
@@ -595,9 +562,6 @@ test.describe("HopKey keyboard shortcuts", () => {
       await goToFramed(page);
       await injectContentScript(page);
 
-      // Collect postMessage calls that match the HopKey protocol.
-      // The send() function calls nextWin.postMessage(), so we must
-      // intercept on each iframe's contentWindow, not just window.
       const sentMessages: unknown[] = [];
       await page.exposeFunction("__captureHopkeyMsg", (msg: unknown) => {
         sentMessages.push(msg);
@@ -618,11 +582,7 @@ test.describe("HopKey keyboard shortcuts", () => {
             return orig(msg, origin, transfer);
           };
         }
-
-        // Wrap window.top's postMessage (for main_frame / next_frame)
         wrapPostMessage(window);
-
-        // Wrap each iframe's contentWindow (for focus_self)
         for (const iframe of Array.from(document.querySelectorAll("iframe"))) {
           wrapPostMessage(iframe.contentWindow);
         }
@@ -631,7 +591,6 @@ test.describe("HopKey keyboard shortcuts", () => {
       await press(page, "h");
       await page.waitForTimeout(300);
 
-      // The top frame should have sent a focus_self message to the first iframe
       const focusMsgs = sentMessages.filter(
         (m) => (m as Record<string, unknown>).type === "focus_self",
       );
@@ -643,18 +602,14 @@ test.describe("HopKey keyboard shortcuts", () => {
       await goToFramed(page);
       await injectContentScript(page);
 
-      // Press H to switch to main frame
       await page.keyboard.press("Shift+H");
       await page.waitForTimeout(300);
 
-      // After mainFrame, focusSelf() should have focused something
       const activeEl = await page.evaluate(() => {
         const el = document.activeElement;
         if (!el || el === document.body) return "body";
         return (el as HTMLElement).id || (el as HTMLElement).tagName.toLowerCase();
       });
-
-      // Should have focused a real element, not just body
       expect(activeEl).not.toBe("body");
     });
   });
